@@ -281,7 +281,7 @@ export default function App() {
             <div className="preview-caption">
               <div>
                 <h2>From source to result.</h2>
-                <p>Node geometry, semantic colors and attached arrowheads.</p>
+                <p>Branches, validation, review loops and a completed result.</p>
               </div>
               <button className="svg-download" onClick={saveSVG}>
                 <Icon name="download" size={13} />

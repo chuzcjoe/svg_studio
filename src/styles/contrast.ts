@@ -26,7 +26,7 @@ function blend(a: string, b: string, alpha: number) {
 }
 export function contrastIssues(c: DiagramStyleConfig) {
   const issues: string[] = [];
-  (["input", "processing", "output"] as const).forEach((role) => {
+  (["input", "processing", "output", "annotation"] as const).forEach((role) => {
     const fill =
       c.nodes.fillMode === "outline"
         ? c.colors.background
@@ -43,5 +43,7 @@ export function contrastIssues(c: DiagramStyleConfig) {
   });
   if (contrast(c.colors.mutedText, c.colors.background) < 4.5)
     issues.push("canvas annotations");
+  if (contrast(c.colors.mutedText, blend(c.colors.annotation, c.colors.background, c.effects.highlightOpacity)) < 4.5)
+    issues.push("group annotations");
   return issues;
 }

@@ -108,3 +108,82 @@ describe("SVG rendering", () => {
 });
 
 it('attaches transfer arrows to rounded node boundaries',()=>{const c=loadPreset('academic');c.nodes.radius=32;const scene=buildScene(c,'System Architecture');const cpu=scene.nodes.find(n=>n.id==='cpu')!;const [x,y]=scene.edges[0].points[0];const r=Math.min(c.nodes.radius,cpu.h/2);expect(Math.hypot(x-(cpu.x+cpu.w-r),y-(cpu.y+r))).toBeCloseTo(r,6);});
+
+// Check the shared workflow's geometry rather than just its rendered markup.
+describe("shared flowchart example", () => {
+  it("uses the same nodes, branches, group and reference link in every preset", () => {
+    const signature = (c: ReturnType<typeof loadPreset>) => {
+      const scene = buildScene(c, "Flowchart");
+      return {
+        nodes: scene.nodes.map(({ id, label, sub, role, shape }) => ({ id, label, sub, role, shape })),
+        labels: scene.labels.map(({ text }) => text),
+        groups: scene.groups.map(({ label }) => label),
+        edges: scene.edges.map(({ arrow, subtle, dashed }) => ({ arrow, subtle, dashed })),
+      };
+    };
+    const example = signature(loadPreset("academic"));
+    expect(example.nodes).toHaveLength(7);
+    expect(example.groups).toEqual(["VALIDATION"]);
+    expect(example.labels).toEqual(expect.arrayContaining(["Yes", "No", "Fix"]));
+    expect(example.nodes.filter((n) => n.shape === "decision")).toHaveLength(1);
+    expect(example.nodes.filter((n) => n.shape === "terminal")).toHaveLength(1);
+    expect(example.edges.filter((e) => e.arrow)).toHaveLength(6);
+    expect(example.edges.find((e) => e.subtle)).toMatchObject({ dashed: true, arrow: false });
+    for (const preset of presets) expect(signature(preset)).toEqual(example);
+  });
+  it("changes the No branch route while keeping its arrow attached to shape boundaries", () => {
+    const c = loadPreset("academic");
+    const orthogonal = buildScene(c, "Flowchart");
+    c.connectors.routing = "straight";
+    const straight = buildScene(c, "Flowchart");
+    expect(orthogonal.edges[3].points).toHaveLength(3);
+    expect(straight.edges[3].points).toHaveLength(2);
+    expect(straight.edges[3].points[0]).toEqual(orthogonal.edges[3].points[0]);
+    expect(straight.edges[3].points.at(-1)).toEqual(orthogonal.edges[3].points.at(-1));
+    const decision = straight.nodes.find((n) => n.id === "decision")!;
+    const review = straight.nodes.find((n) => n.id === "review")!;
+    expect(straight.edges[3].points[0]).toEqual([decision.x + decision.w / 2, decision.y + decision.h]);
+    expect(straight.edges[3].points.at(-1)).toEqual([review.x + review.w, review.y + review.h / 2]);
+  });
+  it("keeps connectors clear of unrelated nodes at both routing modes and extreme settings", () => {
+    const configs = [loadPreset("academic"), loadPreset("soft"), loadPreset("mono")];
+    const large = loadPreset("academic");
+    Object.assign(large.typography, { bodySize: 24, labelSize: 18, titleSize: 36, lineHeight: 1.8 });
+    Object.assign(large.nodes, { minWidth: 200, minHeight: 100, paddingX: 32, paddingY: 24 });
+    // Large text with tight spacing is a stronger collision check than spacious defaults.
+    Object.assign(large.layout, { horizontalGap: 24, verticalGap: 24, groupPadding: 12 });
+    configs.push(large);
+    for (const c of configs) for (const routing of ["straight", "orthogonal"] as const) {
+      c.connectors.routing = routing;
+      const scene = buildScene(c, "Flowchart");
+      const inside = (point: number[], n: typeof scene.nodes[number]) =>
+        point[0] >= n.x && point[0] <= n.x + n.w && point[1] >= n.y && point[1] <= n.y + n.h;
+      for (const edge of scene.edges) for (const node of scene.nodes) {
+        if (inside(edge.points[0], node) || inside(edge.points.at(-1)!, node)) continue;
+        for (let i = 1; i < edge.points.length; i++) {
+          const start = edge.points[i - 1], end = edge.points[i];
+          let low = 0, high = 1;
+          for (const [axis, min, max] of [[0, node.x + 0.01, node.x + node.w - 0.01], [1, node.y + 0.01, node.y + node.h - 0.01]]) {
+            const delta = end[axis] - start[axis];
+            if (!delta) {
+              if (start[axis] < min || start[axis] > max) { low = 1; high = 0; }
+            } else {
+              const bounds = [(min - start[axis]) / delta, (max - start[axis]) / delta].sort((a, b) => a - b);
+              low = Math.max(low, bounds[0]); high = Math.min(high, bounds[1]);
+            }
+          }
+          expect(low > high, `${routing}: connector crosses ${node.id}`).toBe(true);
+        }
+      }
+      for (const n of scene.nodes) {
+        expect(n.x + n.w).toBeLessThan(scene.width);
+        expect(n.y + n.h).toBeLessThan(scene.height);
+        if (n.shape === "decision") {
+          expect(n.w / 2).toBeGreaterThanOrEqual(n.label.length * c.typography.bodySize * 0.67 + 2 * c.nodes.paddingX);
+          expect(n.h / 2).toBeGreaterThanOrEqual(c.typography.bodySize * c.typography.lineHeight + 2 * c.nodes.paddingY);
+        }
+        if (c.layout.snapToGrid) { expect(n.x % 8).toBe(0); expect(n.y % 8).toBe(0); }
+      }
+    }
+  });
+});

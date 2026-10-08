@@ -131,6 +131,17 @@ describe("user workflow", () => {
       "#124abc",
     );
   });
+  it("compares all presets with the same live flowchart example", () => {
+    render(<App />);
+    const ids = (svg: Element) => Array.from(svg.querySelectorAll("[data-node]")).map((n) => n.getAttribute("data-node"));
+    const live = ids(screen.getByRole("img", { name: "Flowchart preview" }));
+    fireEvent.click(screen.getByRole("button", { name: /Academic Minimal.*Built-in preset/ }));
+    for (const svg of screen.getByRole("dialog").querySelectorAll("svg.diagram")) {
+      expect(ids(svg)).toEqual(live);
+      expect(svg.querySelectorAll("[data-group]")).toHaveLength(1);
+      expect(svg.querySelectorAll("[data-edge]")).toHaveLength(7);
+    }
+  });
   it("rejects an invalid import without overwriting current edits", async () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText("Primary color"), {
@@ -236,7 +247,7 @@ describe("style inspection workflow", () => {
     const before = localStorage.getItem(STORAGE_KEY);
     fireEvent.mouseEnter(row("colors.input"));
     expect(regions()).toEqual(["input"]);
-    expect(screen.getByText("The fill of the matching semantic node.")).toBeTruthy();
+    expect(screen.getByText("The fill of the matching semantic nodes.")).toBeTruthy();
     fireEvent.mouseLeave(row("colors.input"));
     expect(document.querySelector("[data-impact-overlay]")).toBeNull();
     expect(localStorage.getItem(STORAGE_KEY)).toBe(before);
@@ -247,7 +258,7 @@ describe("style inspection workflow", () => {
     fireEvent.focus(field);
     expect(regions()).toEqual(["title", "process"]);
     fireEvent.mouseEnter(row("colors.output"));
-    expect(regions()).toEqual(["output"]);
+    expect(regions()).toEqual(["output", "done"]);
     fireEvent.mouseLeave(row("colors.output"));
     expect(regions()).toEqual(["title", "process"]);
     fireEvent.blur(field);
@@ -265,10 +276,10 @@ describe("style inspection workflow", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Connectors" }));
     expect(regions()).toEqual([]);
     fireEvent.mouseEnter(row("connectors.arrowLength"));
-    expect(regions()).toEqual(["arrow-0", "arrow-1"]);
+    expect(regions()).toEqual(["arrow-0", "arrow-1", "arrow-2", "arrow-3", "arrow-4", "arrow-5"]);
     fireEvent.mouseLeave(row("connectors.arrowLength"));
     fireEvent.mouseEnter(row("connectors.strokeWidth"));
-    expect(regions()).toEqual(["edge-0", "edge-1"]);
+    expect(regions()).toEqual(["edge-0", "edge-1", "edge-2", "edge-3", "edge-4", "edge-5", "edge-6"]);
   });
   it("measures text bounds from the rendered SVG for typography highlights", () => {
     render(<App />);

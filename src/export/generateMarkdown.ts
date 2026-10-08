@@ -86,7 +86,7 @@ Weights are numeric CSS font-weight values. The label size is the minimum annota
 
 ### Node Geometry
 ${table("nodes")}
-Node width and height are minima. Expand nodes for text, padding, and line height. Solid fills use their semantic role color; tinted fills composite that semantic role color over background with highlightOpacity; outline uses background fill. Use primary for focal processing-node strokes and border for other node strokes. Radius must not exceed half the shape's height.
+Node width and height are minima. Expand nodes for text, padding, and line height. Solid fills use their semantic role color; tinted fills composite that semantic role color over background with highlightOpacity; outline uses background fill. Use primary for focal processing-node strokes, accent for decision outlines, and border for other node strokes. Radius must not exceed half the shape's height. Use diamond geometry for decisions and capsule geometry for end nodes; corner radius applies to rectangular nodes and group boundaries.
 
 ### Connectors and Arrowheads
 ${table("connectors")}
@@ -109,7 +109,7 @@ Shadow colors must use the text color with shadowOpacity. When enabled, use dx=0
 | Group backgrounds, notes | annotation |
 | Focal nodes and titles | primary |
 | Secondary steps and supporting paths | secondary |
-| Emphasized steps and branch highlights | accent at highlightOpacity |
+| Decision outlines | accent |
 | Node labels | text |
 | Subtitles and annotations | mutedText |
 | General shape outlines and group boundaries | border |
@@ -118,7 +118,7 @@ Shadow colors must use the text color with shadowOpacity. When enabled, use dx=0
 Always pair semantic colors with explicit labels, shapes or line conventions. Never rely on color alone.
 
 ## Flowchart Conventions
-Render clearly labeled inputs, processing steps, and outputs with attached arrows and consistent boundary-to-boundary spacing. Use semantic node colors. The preview demonstrates Input → Process → Output; adapt the content to the requested workflow.
+Render clearly labeled inputs, processing steps, and outputs with attached arrows and consistent boundary-to-boundary spacing. Use semantic node colors. The shared preview demonstrates Source → Prepare → Valid? → Publish → Done, with a No branch into Review that loops back to Prepare. A Policy note connects to Review with a dashed secondary-color reference link. Prepare, Valid? and Review sit inside a labeled Validation group. Use annotation color at highlightOpacity for the group background and accent color for the decision outline. Adapt the content to the requested workflow.
 For branching workflows, use diamond-shaped decisions with explicit outcome labels such as Yes / No on outgoing edges. Use distinct start/end shapes when needed. Keep the reading direction consistent, route loops around unrelated nodes, and preserve configured typography, padding, and connector tokens.
 
 ## Text Overflow and Collision Rules

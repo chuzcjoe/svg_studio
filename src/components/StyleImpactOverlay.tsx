@@ -44,19 +44,19 @@ export function StyleImpactOverlay({
           {region.path ? (
             <>
               <path d={region.path} className="impact-halo" />
-              <path d={region.path} className="impact-line" />
+              <path d={region.path} className={region.area ? "impact-area" : "impact-line"} />
             </>
           ) : (
             <>
               <rect
                 x={region.x} y={region.y}
                 width={region.width} height={region.height}
-                rx={3} className="impact-halo"
+                rx={region.radius ?? 3} className="impact-halo"
               />
               <rect
                 x={region.x} y={region.y}
                 width={region.width} height={region.height}
-                rx={3}
+                rx={region.radius ?? 3}
                 className={region.outline ? "impact-outline" : "impact-area"}
               />
             </>

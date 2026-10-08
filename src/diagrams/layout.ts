@@ -20,6 +20,8 @@ export type NodeBox = {
   role: Role;
   primary?: boolean;
   circle?: boolean;
+  shape?: "decision" | "terminal";
+  accent?: boolean;
 };
 export type Edge = {
   points: [number, number][];
@@ -28,6 +30,7 @@ export type Edge = {
   subtle?: boolean;
 };
 export type Label = {
+  id?: string;
   x: number;
   y: number;
   text: string;
@@ -57,6 +60,7 @@ export type Scene = {
   labels: Label[];
   groups: Group[];
   cells: Cell[];
+  spaces: { id: string; kind: "horizontalGap" | "verticalGap" | "groupPadding"; x: number; y: number; w: number; h: number }[];
 };
 export function buildScene(c: DiagramStyleConfig, type: DiagramType): Scene {
   const s: Scene = {
@@ -67,6 +71,7 @@ export function buildScene(c: DiagramStyleConfig, type: DiagramType): Scene {
     labels: [],
     groups: [],
     cells: [],
+    spaces: [],
   };
   const grid = (n: number) => (c.layout.snapToGrid ? Math.ceil(n / 8) * 8 : n);
   const p = grid(c.layout.canvasPadding),
@@ -147,23 +152,87 @@ export function buildScene(c: DiagramStyleConfig, type: DiagramType): Scene {
   }
   s.labels.push({ x: p, y: titleY, text: type, title: true });
   if (type === "Flowchart") {
-    const items = [
-      box("input", "Input", "source data", "input"),
-      box("process", "Process", "transform", "processing", true),
-      box("output", "Output", "result", "output"),
-    ];
-    let x = p;
-    items.forEach((n) => {
-      add(n, x, top);
-      x += n.w + hg;
+    // Every preset renders this same workflow; only style tokens vary.
+    const input = box("input", "Source", "request data", "input"),
+      process = box("process", "Prepare", "normalize fields", "processing", true),
+      decision = box("decision", "Valid?", undefined, "processing"),
+      review = box("review", "Review", "fix invalid fields", "processing"),
+      output = box("output", "Publish", "release result", "output"),
+      done = box("done", "Done", "workflow complete", "output"),
+      note = box("note", "Policy", "required fields", "annotation");
+    decision.shape = "decision";
+    decision.accent = true;
+    decision.w = grid(Math.max(c.nodes.minWidth,
+      2 * (decision.label.length * c.typography.bodySize * 0.67 + 2 * c.nodes.paddingX)));
+    decision.h = grid(Math.max(c.nodes.minHeight,
+      2 * (c.typography.bodySize * c.typography.lineHeight + 2 * c.nodes.paddingY)));
+    done.shape = "terminal";
+    const labelLine = c.typography.labelSize * c.typography.lineHeight,
+      inputColumn = Math.max(input.w, note.w),
+      processColumn = Math.max(process.w, review.w),
+      outputColumn = Math.max(output.w, done.w),
+      groupX = p + inputColumn + hg,
+      processX = groupX + g,
+      decisionX = processX + processColumn + hg,
+      outputX = decisionX + decision.w + g + hg,
+      mainHeight = Math.max(input.h, process.h, decision.h, output.h),
+      lowerHeight = Math.max(note.h, review.h, done.h),
+      mainY = grid(top + g + labelLine + g + mainHeight / 2),
+      lowerY = grid(mainY + mainHeight / 2 + vg + lowerHeight / 2);
+    const place = (n: NodeBox, x: number, y: number) => add(n, grid(x), grid(y));
+    place(input, p + (inputColumn - input.w) / 2, mainY - input.h / 2);
+    place(process, processX + (processColumn - process.w) / 2, mainY - process.h / 2);
+    place(decision, decisionX, mainY - decision.h / 2);
+    place(output, outputX + (outputColumn - output.w) / 2, mainY - output.h / 2);
+    place(review, processX + (processColumn - review.w) / 2, lowerY - review.h / 2);
+    place(done, outputX + (outputColumn - done.w) / 2, lowerY - done.h / 2);
+    place(note, p + (inputColumn - note.w) / 2, lowerY - note.h / 2);
+    link(input, process);
+    link(process, decision);
+    link(decision, output);
+    const decisionBottom: [number, number] = [decision.x + decision.w / 2, decision.y + decision.h],
+      reviewRight: [number, number] = [review.x + review.w, review.y + review.h / 2];
+    edge(c.connectors.routing === "orthogonal"
+      ? [decisionBottom, [decisionBottom[0], reviewRight[1]], reviewRight]
+      : [decisionBottom, reviewRight]);
+    const reviewTop: [number, number] = [review.x + review.w / 2, review.y],
+      processBottom: [number, number] = [process.x + process.w / 2, process.y + process.h];
+    edge(c.connectors.routing === "orthogonal" && reviewTop[0] !== processBottom[0]
+      ? [reviewTop, [reviewTop[0], (reviewTop[1] + processBottom[1]) / 2],
+          [processBottom[0], (reviewTop[1] + processBottom[1]) / 2], processBottom]
+      : [reviewTop, processBottom]);
+    edge([[output.x + output.w / 2, output.y + output.h], [done.x + done.w / 2, done.y]]);
+    link(note, review);
+    Object.assign(s.edges[s.edges.length - 1], { subtle: true, dashed: true, arrow: false });
+    const groupRight = decision.x + decision.w + g,
+      groupBottom = Math.max(review.y + review.h, decision.y + decision.h) + g;
+    s.groups.push({ x: groupX, y: top, w: groupRight - groupX, h: groupBottom - top, label: "VALIDATION" });
+    s.labels.push(
+      { id: "yes", x: (decision.x + decision.w + output.x) / 2,
+        y: mainY - c.typography.labelSize * 0.8, text: "Yes", anchor: "middle" },
+      { id: "no", x: decisionBottom[0] + c.typography.labelSize,
+        y: decisionBottom[1] + labelLine, text: "No" },
+      { id: "fix", x: processBottom[0] - c.typography.labelSize,
+        y: (reviewTop[1] + processBottom[1]) / 2 + c.typography.labelSize * 0.3,
+        text: "Fix", anchor: "end" },
+      { id: "caption", x: p, y: Math.max(groupBottom, done.y + done.h, note.y + note.h) + vg,
+        text: "Prepare → validate → publish. Review loops back when validation fails." },
+    );
+    [[input, process], [process, decision], [decision, output], [note, review]].forEach(([left, right], i) => {
+      s.spaces.push({ id: `gap-${i}`, kind: "horizontalGap", x: left.x + left.w,
+        y: Math.max(left.y, right.y), w: right.x - left.x - left.w,
+        h: Math.min(left.y + left.h, right.y + right.h) - Math.max(left.y, right.y) });
     });
-    link(items[0], items[1]);
-    link(items[1], items[2]);
-    s.labels.push({
-      x: p,
-      y: top + items[0].h + vg,
-      text: "Source → transformation → result. Meaning stays visible without relying on color.",
-    });
+    const rowBottom = Math.max(...[input, process, decision, output].map((n) => n.y + n.h)),
+      lowerTop = Math.min(...[review, done, note].map((n) => n.y));
+    s.spaces.push({ id: "row-gap", kind: "verticalGap", x: processX,
+      y: rowBottom, w: groupRight - g - processX, h: lowerTop - rowBottom });
+    s.spaces.push(
+      { id: "group-top", kind: "groupPadding", x: groupX, y: top, w: groupRight - groupX, h: g },
+      { id: "group-bottom", kind: "groupPadding", x: groupX, y: groupBottom - g, w: groupRight - groupX, h: g },
+      { id: "group-left", kind: "groupPadding", x: groupX, y: top + g, w: g, h: groupBottom - top - 2 * g },
+      { id: "group-right", kind: "groupPadding", x: groupRight - g, y: top + g, w: g, h: groupBottom - top - 2 * g },
+    );
   } else if (type === "ML Architecture") {
     const input = box("input", "Input", "embeddings", "input"),
       q = box("q", "Q", "query", "processing"),

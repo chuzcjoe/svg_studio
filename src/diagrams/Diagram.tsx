@@ -52,7 +52,13 @@ export function Diagram({
     );
   };
   const nodeShape = (n: NodeBox, fill: string, opacity = 1) =>
-    n.circle ? (
+    n.shape === "decision" ? (
+      <path
+        d={`M${n.x + n.w / 2} ${n.y} L${n.x + n.w} ${n.y + n.h / 2} L${n.x + n.w / 2} ${n.y + n.h} L${n.x} ${n.y + n.h / 2} Z`}
+        fill={fill}
+        fillOpacity={opacity}
+      />
+    ) : n.circle ? (
       <circle
         cx={n.x + n.w / 2}
         cy={n.y + n.h / 2}
@@ -66,7 +72,7 @@ export function Diagram({
         y={n.y}
         width={n.w}
         height={n.h}
-        rx={Math.min(c.nodes.radius, n.h / 2)}
+        rx={n.shape === "terminal" ? n.h / 2 : Math.min(c.nodes.radius, n.h / 2)}
         fill={fill}
         fillOpacity={opacity}
       />
@@ -115,7 +121,7 @@ export function Diagram({
       </defs>
       <rect width={s.width} height={s.height} fill={c.colors.background} />
       {s.groups.map((g, i) => (
-        <g key={`group-${i}`}>
+        <g key={`group-${i}`} data-group={i}>
           <rect
             x={g.x}
             y={g.y}
@@ -130,8 +136,9 @@ export function Diagram({
           />
           {g.label && (
             <text
+              data-preview-part={`group-${i}-label`}
               x={g.x + c.layout.groupPadding}
-              y={g.y + c.layout.groupPadding}
+              y={g.y + c.layout.groupPadding + t.labelSize * 0.8}
               fontSize={t.labelSize}
               fill={c.colors.mutedText}
             >
@@ -143,6 +150,7 @@ export function Diagram({
       {s.edges.map((e, i) => (
         <path
           key={`edge-${i}`}
+          data-edge={i}
           d={e.points.map(([x, y], j) => `${j ? "L" : "M"}${x} ${y}`).join(" ")}
           fill="none"
           stroke={e.subtle ? c.colors.secondary : c.colors.connector}
@@ -169,7 +177,14 @@ export function Diagram({
               c.colors[n.role],
               c.nodes.fillMode === "tinted" ? c.effects.highlightOpacity : 1,
             )}
-          {n.circle ? (
+          {n.shape === "decision" ? (
+            <path
+              d={`M${n.x + n.w / 2} ${n.y} L${n.x + n.w} ${n.y + n.h / 2} L${n.x + n.w / 2} ${n.y + n.h} L${n.x} ${n.y + n.h / 2} Z`}
+              fill="none"
+              stroke={c.colors.accent}
+              strokeWidth={c.nodes.strokeWidth}
+            />
+          ) : n.circle ? (
             <circle
               cx={n.x + n.w / 2}
               cy={n.y + n.h / 2}
@@ -184,7 +199,7 @@ export function Diagram({
               y={n.y}
               width={n.w}
               height={n.h}
-              rx={Math.min(c.nodes.radius, n.h / 2)}
+              rx={n.shape === "terminal" ? n.h / 2 : Math.min(c.nodes.radius, n.h / 2)}
               fill="none"
               stroke={n.primary ? c.colors.primary : c.colors.border}
               strokeWidth={c.nodes.strokeWidth}
@@ -236,7 +251,7 @@ export function Diagram({
       {s.labels.map((l, i) => (
         <text
           key={`label-${i}`}
-          data-preview-part={l.title ? "title" : "caption"}
+          data-preview-part={l.title ? "title" : (l.id ?? `label-${i}`)}
           x={l.x}
           y={l.y}
           textAnchor={l.anchor ?? "start"}

@@ -889,7 +889,7 @@ button:disabled {
   border-color: var(--hover-border);
 }
 .preset-thumbnail {
-  height: 175px;
+  aspect-ratio: 944 / 496;
   display: grid;
   place-items: center;
   padding: 8px;
@@ -1289,9 +1289,6 @@ button:disabled {
   .preset-gallery {
     grid-template-columns: 1fr;
     gap: 15px;
-  }
-  .preset-thumbnail {
-    height: 165px;
   }
   .preset-card-info b {
     font-size: 16px;

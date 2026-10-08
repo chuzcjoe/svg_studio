@@ -68,3 +68,10 @@ describe("Markdown export", () => {
     expect(contrastIssues(c)).toEqual([]),
   );
 });
+
+
+it("checks readability on the example's Policy note fill", () => {
+  const c = loadPreset("academic");
+  c.colors.annotation = c.colors.text;
+  expect(contrastIssues(c)).toContain("annotation labels");
+});
