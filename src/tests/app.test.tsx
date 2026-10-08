@@ -28,10 +28,6 @@ beforeEach(() => {
     value: vi.fn(),
   });
   vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
-  Object.defineProperty(navigator, "clipboard", {
-    configurable: true,
-    value: { writeText: vi.fn().mockResolvedValue(undefined) },
-  });
   Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
     configurable: true,
     value: function (this: HTMLDialogElement) {
@@ -49,9 +45,6 @@ describe("user workflow", () => {
     fireEvent.change(screen.getByLabelText("Primary color"), {
       target: { value: "#124abc" },
     });
-    expect(screen.getByLabelText("Generated Markdown").textContent).toContain(
-      "#124abc",
-    );
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).colors.primary).toBe(
       "#124abc",
     );
@@ -59,9 +52,11 @@ describe("user workflow", () => {
     fireEvent.change(screen.getByLabelText("Corner radius", { exact: true }), {
       target: { value: "20" },
     });
-    expect(screen.getByLabelText("Generated Markdown").textContent).toContain(
-      "| radius | 20 px",
-    );
+    expect(
+      document
+        .querySelector('.diagram-stage [data-node="q"] rect')
+        ?.getAttribute("rx"),
+    ).toBe("20");
     fireEvent.click(screen.getByRole("button", { name: "Sequence" }));
     expect(
       screen.getByRole("img", { name: "Sequence Diagram preview" }),
@@ -70,16 +65,27 @@ describe("user workflow", () => {
       20,
     );
   });
-  it("copies and downloads byte-for-byte identical Markdown", async () => {
+  it("exports current rules directly without a sidebar or intermediate dialog", async () => {
     render(<App />);
-    const visible = screen.getByLabelText("Generated Markdown").textContent;
-    fireEvent.click(screen.getByLabelText("Copy Markdown"));
-    await waitFor(() =>
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(visible),
+    expect(screen.queryByLabelText("Markdown style rules")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Rules" })).toBeNull();
+    fireEvent.change(screen.getByLabelText("Primary color"), {
+      target: { value: "#124abc" },
+    });
+    const expected = generateMarkdown(
+      JSON.parse(localStorage.getItem(STORAGE_KEY)!),
     );
     fireEvent.click(screen.getByRole("button", { name: "Export rules" }));
-    expect(await blobs[0].text()).toBe(visible);
-    expect(visible).toBe(generateMarkdown(loadPreset("academic")));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(blobs).toHaveLength(1);
+    expect(await blobs[0].text()).toBe(expected);
+  });
+  it("saves complete JSON from the style editor", async () => {
+    render(<App />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Download style JSON" }),
+    );
+    expect(JSON.parse(await blobs[0].text())).toEqual(loadPreset("academic"));
   });
   it("restores a saved modified configuration on reload", () => {
     const c = loadPreset("soft");
@@ -89,8 +95,8 @@ describe("user workflow", () => {
     expect(screen.getByLabelText("Primary color").getAttribute("value")).toBe(
       c.colors.primary,
     );
-    expect(screen.getByLabelText("Generated Markdown").textContent).toContain(
-      "| radius | 25 px",
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).nodes.radius).toBe(
+      25,
     );
   });
   it("switches presets explicitly and can undo the replacement", () => {
@@ -147,16 +153,26 @@ describe("user workflow", () => {
       target: { files: [file] },
     });
     await waitFor(() =>
-      expect(screen.getByLabelText("Generated Markdown").textContent).toContain(
-        "| radius | 19 px",
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).nodes.radius).toBe(
+        19,
       ),
     );
     fireEvent.click(screen.getByRole("button", { name: "Reset" }));
     fireEvent.click(screen.getByRole("button", { name: "Reset to preset" }));
-    expect(screen.getByLabelText("Generated Markdown").textContent).toContain(
-      "| radius | 4 px",
-    );
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).nodes.radius).toBe(4);
   });
 });
 
-it('lets users clear and type a valid numeric value without losing edits',()=>{render(<App/>);fireEvent.click(screen.getByRole('tab',{name:'Nodes'}));const field=screen.getByLabelText('Minimum width value') as HTMLInputElement;fireEvent.change(field,{target:{value:''}});expect(field.value).toBe('');fireEvent.change(field,{target:{value:'160'}});expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).nodes.minWidth).toBe(160);});
+it("lets users clear and type a valid numeric value without losing edits", () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole("tab", { name: "Nodes" }));
+  const field = screen.getByLabelText(
+    "Minimum width value",
+  ) as HTMLInputElement;
+  fireEvent.change(field, { target: { value: "" } });
+  expect(field.value).toBe("");
+  fireEvent.change(field, { target: { value: "160" } });
+  expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).nodes.minWidth).toBe(
+    160,
+  );
+});

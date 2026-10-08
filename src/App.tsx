@@ -59,7 +59,7 @@ export default function App() {
     useStyleConfig();
   const [group, setGroup] = useState<ConfigGroup>("colors"),
     [type, setType] = useState<DiagramType>("ML Architecture"),
-    [modal, setModal] = useState<"presets" | "rules" | "reset" | null>(null),
+    [modal, setModal] = useState<"presets" | "reset" | null>(null),
     [mobileTab, setMobileTab] = useState("preview"),
     [zoom, setZoom] = useState<"fit" | "actual">("fit"),
     [toast, setToast] = useState(""),
@@ -68,7 +68,6 @@ export default function App() {
     canvasRef = useRef<HTMLDivElement>(null),
     toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modified = isModified(config),
-    markdown = useMemo(() => generateMarkdown(config), [config]),
     scene = useMemo(() => buildScene(config, type), [config, type]),
     issues = contrastIssues(config);
   useEffect(
@@ -83,18 +82,20 @@ export default function App() {
     toastTimer.current = setTimeout(() => setToast(""), 4500);
   }
   function saveMarkdown() {
-    downloadFile(markdown, "svg-style-rules.md", "text/markdown;charset=utf-8");
+    downloadFile(
+      generateMarkdown(config),
+      "svg-style-rules.md",
+      "text/markdown;charset=utf-8",
+    );
     notify("Markdown downloaded. Attach it to your next AI request.");
   }
-  async function copyMarkdown() {
-    try {
-      await navigator.clipboard.writeText(markdown);
-      notify("Style rules copied to clipboard.");
-    } catch {
-      notify(
-        "Clipboard unavailable. Download Markdown or select and copy the rules text.",
-      );
-    }
+  function saveJSON() {
+    downloadFile(
+      JSON.stringify(config, null, 2) + "\n",
+      "svg-style.json",
+      "application/json;charset=utf-8",
+    );
+    notify("JSON downloaded. Import it to restore these exact settings.");
   }
   async function importFile(file?: File) {
     if (!file) return;
@@ -243,23 +244,14 @@ export default function App() {
           </div>
         )}
         <nav className="mobile-nav" aria-label="Workspace panels">
-          {["style", "preview", "rules"].map((tab) => (
+          {["style", "preview"].map((tab) => (
             <button
               key={tab}
               className={tab === mobileTab ? "active" : ""}
               aria-current={tab === mobileTab ? "page" : undefined}
               onClick={() => setMobileTab(tab)}
             >
-              <Icon
-                name={
-                  tab === "style"
-                    ? "sliders"
-                    : tab === "preview"
-                      ? "grid"
-                      : "code"
-                }
-                size={14}
-              />
+              <Icon name={tab === "style" ? "sliders" : "grid"} size={14} />
               {tab[0].toUpperCase() + tab.slice(1)}
             </button>
           ))}
@@ -271,6 +263,7 @@ export default function App() {
             setGroup={setGroup}
             modified={modified}
             onPresets={() => setModal("presets")}
+            onExportJSON={saveJSON}
             onUpdate={(g, k, v) => {
               const error = update(g, k, v);
               if (error) notify(error);
@@ -395,93 +388,6 @@ export default function App() {
               <span>SVG · no dependencies</span>
             </div>
           </main>
-          <aside
-            className="panel rules-panel"
-            aria-label="Markdown style rules"
-          >
-            <div className="panel-title">
-              <span>
-                <Icon name="code" size={15} />
-                Style rules
-              </span>
-              <span className="file-tag">.md</span>
-            </div>
-            <div className="rules-intro">
-              <h2>Your style, ready for AI.</h2>
-              <p>
-                Attach the exported Markdown to your AI request and ask it to
-                follow these SVG rules.
-              </p>
-              <div className="rules-stats">
-                <span>
-                  {(
-                    [
-                      "colors",
-                      "typography",
-                      "nodes",
-                      "connectors",
-                      "layout",
-                      "effects",
-                    ] as const
-                  ).reduce(
-                    (total, group) => total + Object.keys(config[group]).length,
-                    0,
-                  )}{" "}
-                  tokens
-                </span>
-                <span>6 diagram conventions</span>
-              </div>
-            </div>
-            <div className="code-toolbar">
-              <span>svg-style-rules.md</span>
-              <div>
-                <button onClick={copyMarkdown} aria-label="Copy Markdown">
-                  <Icon name="copy" size={12} />
-                </button>
-                <button
-                  onClick={() => setModal("rules")}
-                  aria-label="Expand Markdown preview"
-                >
-                  <Icon name="fit" size={12} />
-                </button>
-              </div>
-            </div>
-            <pre
-              className="rules-code"
-              tabIndex={0}
-              aria-label="Generated Markdown"
-            >
-              <code>{markdown}</code>
-            </pre>
-            <div className="rules-bottom">
-              <div>
-                <span className="status-dot" />
-                Generated from your tokens
-              </div>
-              <button className="export-button" onClick={saveMarkdown}>
-                <Icon name="download" size={14} />
-                Download Markdown
-              </button>
-              <button
-                className="json-download"
-                onClick={() => {
-                  downloadFile(
-                    JSON.stringify(config, null, 2) + "\n",
-                    "svg-style.json",
-                    "application/json;charset=utf-8",
-                  );
-                  notify(
-                    "JSON downloaded. Import it to restore these exact settings.",
-                  );
-                }}
-              >
-                <Icon name="code" size={13} />
-                Download style JSON
-                <Icon name="arrow" size={12} />
-              </button>
-              <small>Deterministic rules. No LLM call.</small>
-            </div>
-          </aside>
         </div>
         <footer className="studio-footer">
           <span>DESIGNED FOR DIAGRAMS THAT EXPLAIN.</span>
@@ -493,9 +399,7 @@ export default function App() {
           label={
             modal === "presets"
               ? "Choose a diagram preset"
-              : modal === "rules"
-                ? "Full Markdown preview"
-                : "Reset to preset defaults"
+              : "Reset to preset defaults"
           }
           onClose={() => setModal(null)}
         >
@@ -512,36 +416,6 @@ export default function App() {
                 );
               }}
             />
-          ) : modal === "rules" ? (
-            <>
-              <div className="modal-heading">
-                <div>
-                  <div className="eyebrow">EXACT EXPORT CONTENT</div>
-                  <h2>Your SVG style specification.</h2>
-                  <p>Copy and download use the same text shown below.</p>
-                </div>
-                <button
-                  className="icon-button"
-                  onClick={() => setModal(null)}
-                  aria-label="Close Markdown preview"
-                >
-                  <Icon name="close" />
-                </button>
-              </div>
-              <div className="expanded-actions">
-                <button className="secondary-button" onClick={copyMarkdown}>
-                  <Icon name="copy" size={14} />
-                  Copy Markdown
-                </button>
-                <button className="export-button" onClick={saveMarkdown}>
-                  <Icon name="download" size={14} />
-                  Download Markdown
-                </button>
-              </div>
-              <pre className="expanded-code" tabIndex={0}>
-                <code>{markdown}</code>
-              </pre>
-            </>
           ) : (
             <div className="reset-dialog">
               <Icon name="reset" size={26} />

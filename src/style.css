@@ -221,7 +221,7 @@ button:disabled {
 }
 .workspace {
   display: grid;
-  grid-template-columns: 255px minmax(360px, 1fr) 295px;
+  grid-template-columns: 255px minmax(360px, 1fr);
   gap: 19px;
   min-height: 660px;
   height: calc(100vh - 272px);
@@ -249,8 +249,7 @@ button:disabled {
   align-items: center;
   gap: 8px;
 }
-.count,
-.file-tag {
+.count {
   font:
     9px Menlo,
     Consolas,
@@ -653,7 +652,7 @@ button:disabled {
   width: 100%;
   height: 100%;
   min-height: 0;
-  max-height: 440px;
+  max-height: none;
   display: block;
 }
 .diagram-stage.actual {
@@ -806,112 +805,6 @@ button:disabled {
 }
 .contrast-notice .icon {
   margin-top: 1px;
-}
-.rules-panel {
-  display: flex;
-  flex-direction: column;
-}
-.rules-intro {
-  padding: 24px 18px 20px;
-}
-.rules-intro h2 {
-  font-size: 14px;
-  font-weight: 550;
-  letter-spacing: -0.3px;
-}
-.rules-intro p {
-  font-size: 10px;
-  color: #8392a8;
-  line-height: 1.8;
-  margin-top: 9px;
-}
-.rules-stats {
-  display: flex;
-  gap: 8px;
-  margin-top: 16px;
-}
-.rules-stats span {
-  background: #f5f7fc;
-  border-radius: 3px;
-  padding: 5px 6px;
-  font-size: 8px;
-  color: #8998af;
-}
-.code-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 11px 15px;
-  background: #f5f7fb;
-  border-block: 1px solid var(--line);
-  font:
-    9px Menlo,
-    Consolas,
-    monospace;
-  color: #8b99ad;
-}
-.code-toolbar > div {
-  display: flex;
-  gap: 12px;
-}
-.code-toolbar button {
-  padding: 0;
-  color: #7e90b1;
-}
-.rules-code {
-  margin: 0;
-  flex: 1;
-  min-height: 190px;
-  padding: 19px 16px;
-  background: #f7f9fc;
-  white-space: pre-wrap;
-  overflow: auto;
-  overflow-wrap: anywhere;
-  color: #687b97;
-  font:
-    10px/1.95 Menlo,
-    Consolas,
-    monospace;
-  scrollbar-width: thin;
-  scrollbar-color: #dfe5ef transparent;
-}
-.rules-code code {
-  font: inherit;
-}
-.rules-bottom {
-  padding: 18px;
-  border-top: 1px solid var(--line);
-}
-.rules-bottom > div {
-  font-size: 9px;
-  color: #91a0b5;
-  margin-bottom: 14px;
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.rules-bottom > .export-button {
-  width: 100%;
-  font-size: 11px;
-}
-.json-download {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 10px;
-  color: #8b99af;
-  padding: 13px 0 0;
-}
-.json-download > .icon:last-child {
-  margin-left: auto;
-}
-.rules-bottom small {
-  display: block;
-  text-align: center;
-  font-size: 8px;
-  color: #a3aebe;
-  margin-top: 16px;
 }
 .studio-footer {
   display: flex;
@@ -1122,11 +1015,6 @@ button:disabled {
   padding: 11px 13px;
   margin-bottom: 20px;
 }
-.expanded-actions {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 18px;
-}
 .secondary-button {
   display: inline-flex;
   align-items: center;
@@ -1138,25 +1026,6 @@ button:disabled {
   font-size: 11px;
   color: #7e8ea6;
   background: #fff;
-}
-.expanded-code {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  overflow: auto;
-  background: #f7f9fd;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 24px;
-  margin: 0;
-  color: #607490;
-  font:
-    11px/1.85 Menlo,
-    Consolas,
-    monospace;
-  max-height: 55vh;
-}
-.expanded-code code {
-  font: inherit;
 }
 .reset-dialog {
   max-width: 490px;
@@ -1186,7 +1055,7 @@ button:disabled {
     padding: 0 45px;
   }
   .workspace {
-    grid-template-columns: 270px minmax(400px, 1fr) 315px;
+    grid-template-columns: 270px minmax(400px, 1fr);
     gap: 22px;
   }
   .diagram-stage {
@@ -1203,35 +1072,6 @@ button:disabled {
   .preview-panel {
     min-height: 650px;
     max-height: 800px;
-  }
-  .rules-panel {
-    grid-column: 1/-1;
-    display: grid;
-    grid-template-columns: 230px 1fr 250px;
-    min-height: 300px;
-  }
-  .rules-panel > .panel-title {
-    grid-column: 1/-1;
-  }
-  .rules-intro {
-    grid-row: 2/4;
-    grid-column: 1;
-  }
-  .code-toolbar {
-    grid-row: 2;
-    grid-column: 2;
-  }
-  .rules-code {
-    grid-row: 3;
-    grid-column: 2;
-    max-height: 260px;
-    min-height: 150px;
-  }
-  .rules-bottom {
-    grid-row: 2/4;
-    grid-column: 3;
-    border-top: 0;
-    align-self: center;
   }
   .schema {
     display: none;
@@ -1367,8 +1207,7 @@ button:disabled {
     display: none;
   }
   .mobile-style > .style-panel,
-  .mobile-preview > .preview-panel,
-  .mobile-rules > .rules-panel {
+  .mobile-preview > .preview-panel {
     display: flex;
     min-height: 0;
     max-height: none;
@@ -1519,42 +1358,6 @@ button:disabled {
   .contrast-notice {
     margin: 11px 12px 0;
   }
-  .rules-intro {
-    padding: 24px 20px;
-  }
-  .rules-intro h2 {
-    font-size: 16px;
-  }
-  .rules-intro p {
-    font-size: 11px;
-  }
-  .rules-stats span {
-    font-size: 9px;
-  }
-  .code-toolbar {
-    font-size: 10px;
-    padding: 13px 20px;
-  }
-  .rules-code {
-    min-height: 380px;
-    max-height: 65vh;
-    font-size: 11px;
-    padding: 20px;
-  }
-  .rules-bottom {
-    padding: 20px;
-    align-self: stretch;
-    border-top: 1px solid var(--line);
-  }
-  .rules-bottom > .export-button {
-    font-size: 12px;
-  }
-  .rules-bottom small {
-    font-size: 9px;
-  }
-  .json-download {
-    font-size: 11px;
-  }
   .studio-footer {
     font-size: 6px;
     padding: 22px 0;
@@ -1602,18 +1405,6 @@ button:disabled {
   .notice {
     font-size: 10px;
   }
-  .expanded-actions {
-    gap: 8px;
-  }
-  .expanded-actions > button {
-    font-size: 10px;
-    padding: 10px;
-  }
-  .expanded-code {
-    font-size: 10px;
-    padding: 15px;
-    max-height: 58vh;
-  }
   .reset-dialog h2 {
     font-size: 22px;
   }
@@ -1653,11 +1444,11 @@ button:disabled {
 /* Keep the focused SVG large enough to inspect at ordinary laptop widths. */
 @media (min-width: 1201px) {
   .workspace {
-    min-height: 830px;
+    min-height: 900px;
     height: calc(100vh - 272px);
   }
   .diagram-stage {
-    min-height: 335px;
+    min-height: 450px;
   }
   .small-previews > button > div {
     height: 80px;
@@ -1678,5 +1469,32 @@ button:disabled {
   }
   .brand {
     font-size: 13px;
+  }
+}
+
+.config-actions {
+  padding: 15px 18px;
+  border-top: 1px solid var(--line);
+  background: #fafbfe;
+  flex-shrink: 0;
+}
+.config-actions button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  color: #7e8da5;
+  font-size: 10px;
+  padding: 3px 0;
+}
+.config-actions button > .icon:last-child {
+  margin-left: auto;
+}
+@media (max-width: 760px) {
+  .config-actions {
+    padding: 18px 21px;
+  }
+  .config-actions button {
+    font-size: 11px;
   }
 }

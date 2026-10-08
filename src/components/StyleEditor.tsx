@@ -14,6 +14,7 @@ export function StyleEditor({
   setGroup,
   onUpdate,
   onPresets,
+  onExportJSON,
   modified,
 }: {
   config: DiagramStyleConfig;
@@ -25,6 +26,7 @@ export function StyleEditor({
     value: string | number | boolean,
   ) => void;
   onPresets: () => void;
+  onExportJSON: () => void;
   modified: boolean;
 }) {
   return (
@@ -262,6 +264,13 @@ export function StyleEditor({
             </span>
           </p>
         </div>
+      </div>
+      <div className="config-actions">
+        <button onClick={onExportJSON} aria-label="Download style JSON">
+          <Icon name="download" size={13} />
+          Save style JSON
+          <Icon name="arrow" size={12} />
+        </button>
       </div>
     </aside>
   );
