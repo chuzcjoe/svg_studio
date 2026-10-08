@@ -122,28 +122,53 @@ describe("shared flowchart example", () => {
       };
     };
     const example = signature(loadPreset("academic"));
-    expect(example.nodes).toHaveLength(7);
-    expect(example.groups).toEqual(["VALIDATION"]);
+    expect(example.nodes).toHaveLength(14);
+    expect(example.groups).toEqual(["DELIVERY PIPELINE", "01 / VALIDATION & RECOVERY", "02 / PARALLEL PROCESSING"]);
     expect(example.labels).toEqual(expect.arrayContaining(["Yes", "No", "Fix"]));
-    expect(example.nodes.filter((n) => n.shape === "decision")).toHaveLength(1);
-    expect(example.nodes.filter((n) => n.shape === "terminal")).toHaveLength(1);
-    expect(example.edges.filter((e) => e.arrow)).toHaveLength(6);
+    expect(example.nodes.filter((n) => n.shape === "decision")).toHaveLength(3);
+    expect(example.nodes.filter((n) => n.shape === "terminal")).toHaveLength(3);
+    expect(example.edges.filter((e) => e.arrow)).toHaveLength(15);
     expect(example.edges.find((e) => e.subtle)).toMatchObject({ dashed: true, arrow: false });
     for (const preset of presets) expect(signature(preset)).toEqual(example);
   });
-  it("changes the No branch route while keeping its arrow attached to shape boundaries", () => {
+  it("changes parallel routes while keeping endpoints on shape boundaries", () => {
     const c = loadPreset("academic");
     const orthogonal = buildScene(c, "Flowchart");
     c.connectors.routing = "straight";
     const straight = buildScene(c, "Flowchart");
-    expect(orthogonal.edges[3].points).toHaveLength(3);
-    expect(straight.edges[3].points).toHaveLength(2);
-    expect(straight.edges[3].points[0]).toEqual(orthogonal.edges[3].points[0]);
-    expect(straight.edges[3].points.at(-1)).toEqual(orthogonal.edges[3].points.at(-1));
-    const decision = straight.nodes.find((n) => n.id === "decision")!;
-    const review = straight.nodes.find((n) => n.id === "review")!;
-    expect(straight.edges[3].points[0]).toEqual([decision.x + decision.w / 2, decision.y + decision.h]);
-    expect(straight.edges[3].points.at(-1)).toEqual([review.x + review.w, review.y + review.h / 2]);
+    const orthEdge = orthogonal.edges.find(e => e.id === "fork-enrich")!;
+    const straightEdge = straight.edges.find(e => e.id === "fork-enrich")!;
+    expect(orthEdge.points).toHaveLength(4);
+    expect(straightEdge.points).toHaveLength(2);
+    expect(straightEdge.points[0]).toEqual(orthEdge.points[0]);
+    expect(straightEdge.points.at(-1)).toEqual(orthEdge.points.at(-1));
+    const dispatch = straight.nodes.find(n => n.id === "dispatch")!;
+    const enrich = straight.nodes.find(n => n.id === "enrich")!;
+    expect(straightEdge.points[0]).toEqual([dispatch.x + dispatch.w / 2, dispatch.y + dispatch.h]);
+    expect(straightEdge.points.at(-1)).toEqual([enrich.x + enrich.w / 2, enrich.y]);
+  });
+  it("preserves nested containment, reserved group headers and bounded recovery semantics", () => {
+    for (const c of presets) {
+      const scene = buildScene(c, "Flowchart");
+      const parent = scene.groups[0];
+      for (const child of scene.groups.slice(1)) {
+        expect(child.x).toBeGreaterThanOrEqual(parent.x + c.layout.groupPadding);
+        expect(child.y).toBeGreaterThan(parent.y + c.layout.groupPadding + c.typography.labelSize);
+        expect(child.x + child.w).toBeLessThanOrEqual(parent.x + parent.w - c.layout.groupPadding);
+        expect(child.y + child.h).toBeLessThan(parent.y + parent.h);
+        for (const n of scene.nodes.filter(n => n.y >= child.y && n.y < child.y + child.h)) {
+          expect(n.y).toBeGreaterThan(child.y + c.layout.groupPadding + c.typography.labelSize);
+          expect(n.x).toBeGreaterThanOrEqual(child.x + c.layout.groupPadding);
+          expect(n.x + n.w).toBeLessThanOrEqual(child.x + child.w - c.layout.groupPadding);
+        }
+      }
+      expect(scene.nodes.find(n => n.id === "review")?.sub).toContain("attempt +1");
+      expect(scene.nodes.find(n => n.id === "join")?.sub).toBe("wait for both");
+      expect(scene.edges.map(e => e.id)).toEqual(expect.arrayContaining([
+        "retry-allowed", "retry-exhausted", "fork-enrich", "fork-audit", "join-enrich", "join-audit", "delivered", "delivery-failed",
+      ]));
+      expect(scene.edges.find(e => e.id === "retry-exhausted")?.points).toHaveLength(4);
+    }
   });
   it("keeps connectors clear of unrelated nodes at both routing modes and extreme settings", () => {
     const configs = [loadPreset("academic"), loadPreset("soft"), loadPreset("mono")];
@@ -174,6 +199,15 @@ describe("shared flowchart example", () => {
           }
           expect(low > high, `${routing}: connector crosses ${node.id}`).toBe(true);
         }
+      }
+      if (routing === "orthogonal") for (const e of scene.edges) {
+        for (let i = 1; i < e.points.length; i++)
+          expect(e.points[i][0] === e.points[i - 1][0] || e.points[i][1] === e.points[i - 1][1], e.id).toBe(true);
+      }
+      for (const label of scene.labels.filter(l => !l.title)) {
+        const w = label.text.length * c.typography.labelSize * .67;
+        const left = label.x - (label.anchor === "end" ? w : label.anchor === "middle" ? w / 2 : 0);
+        expect(left, label.id).toBeGreaterThanOrEqual(c.layout.canvasPadding);
       }
       for (const n of scene.nodes) {
         expect(n.x + n.w).toBeLessThan(scene.width);

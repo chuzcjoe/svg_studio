@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { generateMarkdown, exampleSVG } from "../export/generateMarkdown";
 import { presets, loadPreset } from "../styles/presets";
+import { buildScene } from "../diagrams/layout";
 import { contrastIssues } from "../styles/contrast";
 describe("Markdown export", () => {
   it.each(presets)("exports every active parameter for $name", (c) => {
@@ -63,6 +64,12 @@ describe("Markdown export", () => {
       c.typography.fontFamily,
     );
     expect(doc.querySelector("script,foreignObject,image")).toBeNull();
+    const scene = buildScene(c, "Flowchart");
+    expect([...doc.querySelectorAll("[data-node]")].map(n => n.getAttribute("data-node"))).toEqual(scene.nodes.map(n => n.id));
+    expect(doc.querySelectorAll("[data-group]")).toHaveLength(scene.groups.length);
+    expect([...doc.querySelectorAll("[data-flow-edge]")].map(n => n.getAttribute("data-flow-edge"))).toEqual(scene.edges.map(e => e.id));
+    expect(generateMarkdown(c)).toContain("Join waits for BOTH tasks");
+    expect(generateMarkdown(c)).toContain("At the limit, route to Failed");
   });
   it.each(presets)("maintains readable default text in $name", (c) =>
     expect(contrastIssues(c)).toEqual([]),

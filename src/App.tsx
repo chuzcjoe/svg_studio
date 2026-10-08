@@ -10,7 +10,6 @@ import { type ConfigGroup, parseConfigJSON } from "./styles/schema";
 import { contrastIssues } from "./styles/contrast";
 import { useStyleConfig } from "./hooks/useStyleConfig";
 import { useTheme } from "./hooks/useTheme";
-import { generateMarkdown } from "./export/generateMarkdown";
 import { getStyleImpact, type StyleTarget } from "./diagrams/styleImpact";
 export function downloadFile(content: string, name: string, type: string) {
   const url = URL.createObjectURL(new Blob([content], { type }));
@@ -31,6 +30,7 @@ export default function App() {
     [mobileTab, setMobileTab] = useState("preview"),
     [toast, setToast] = useState(""),
     [importError, setImportError] = useState("");
+  const [exporting, setExporting] = useState(false);
   const [inspected, setInspected] = useState<StyleTarget | null>(null);
   const impact = useMemo(
     () => getStyleImpact(config, inspected),
@@ -53,13 +53,22 @@ export default function App() {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(""), 4500);
   }
-  function saveMarkdown() {
-    downloadFile(
-      generateMarkdown(config),
-      "svg-style-rules.md",
-      "text/markdown;charset=utf-8",
-    );
-    notify("Markdown downloaded. Attach it to your next AI request.");
+  async function saveMarkdown() {
+    setExporting(true);
+    try {
+      // The SVG static renderer is only needed when exporting rules.
+      const { generateMarkdown } = await import("./export/generateMarkdown");
+      downloadFile(
+        generateMarkdown(config),
+        "svg-style-rules.md",
+        "text/markdown;charset=utf-8",
+      );
+      notify("Markdown downloaded. Attach it to your next AI request.");
+    } catch {
+      notify("Unable to export rules. Please try again.");
+    } finally {
+      setExporting(false);
+    }
   }
   function saveJSON() {
     downloadFile(
@@ -179,7 +188,12 @@ export default function App() {
               <Icon name="upload" size={14} />
               <span>Import</span>
             </button>
-            <button className="export-button" onClick={saveMarkdown}>
+            <button
+              className="export-button"
+              onClick={saveMarkdown}
+              disabled={exporting}
+              aria-busy={exporting}
+            >
               <Icon name="download" size={15} />
               <span>Export rules</span>
             </button>
@@ -284,7 +298,7 @@ export default function App() {
             <div className="preview-caption">
               <div>
                 <h2>From source to result.</h2>
-                <p>Branches, validation, review loops and a completed result.</p>
+                <p>Bounded retries, parallel tasks, nested groups and clear outcomes.</p>
               </div>
               <button className="svg-download" onClick={saveSVG}>
                 <Icon name="download" size={13} />

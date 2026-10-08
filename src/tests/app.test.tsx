@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import { Blob as NodeBlob } from "node:buffer";
 import App from "../App";
+import { buildScene } from "../diagrams/layout";
 import { loadPreset } from "../styles/presets";
 import { STORAGE_KEY } from "../hooks/useStyleConfig";
 import { THEME_STORAGE_KEY } from "../hooks/useTheme";
@@ -87,7 +88,7 @@ describe("user workflow", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Export rules" }));
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(blobs).toHaveLength(1);
+    await waitFor(() => expect(blobs).toHaveLength(1));
     expect(await blobs[0].text()).toBe(expected);
   });
   it("saves complete JSON from the style editor", async () => {
@@ -138,8 +139,8 @@ describe("user workflow", () => {
     fireEvent.click(screen.getByRole("button", { name: /Academic Minimal.*Built-in preset/ }));
     for (const svg of screen.getByRole("dialog").querySelectorAll("svg.diagram")) {
       expect(ids(svg)).toEqual(live);
-      expect(svg.querySelectorAll("[data-group]")).toHaveLength(1);
-      expect(svg.querySelectorAll("[data-edge]")).toHaveLength(7);
+      expect(svg.querySelectorAll("[data-group]")).toHaveLength(3);
+      expect(svg.querySelectorAll("[data-edge]")).toHaveLength(16);
     }
   });
   it("rejects an invalid import without overwriting current edits", async () => {
@@ -206,6 +207,7 @@ it("persists the UI theme without changing the diagram configuration or export",
   expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
   expect(localStorage.getItem(STORAGE_KEY)).toBe(config);
   fireEvent.click(screen.getByRole("button", { name: "Export rules" }));
+  await waitFor(() => expect(blobs).toHaveLength(1));
   expect(await blobs[0].text()).toBe(generateMarkdown(JSON.parse(config!)));
   first.unmount();
   render(<App />);
@@ -258,7 +260,7 @@ describe("style inspection workflow", () => {
     fireEvent.focus(field);
     expect(regions()).toEqual(["title", "process"]);
     fireEvent.mouseEnter(row("colors.output"));
-    expect(regions()).toEqual(["output", "done"]);
+    expect(regions()).toEqual(["output", "failed", "done"]);
     fireEvent.mouseLeave(row("colors.output"));
     expect(regions()).toEqual(["title", "process"]);
     fireEvent.blur(field);
@@ -276,10 +278,10 @@ describe("style inspection workflow", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Connectors" }));
     expect(regions()).toEqual([]);
     fireEvent.mouseEnter(row("connectors.arrowLength"));
-    expect(regions()).toEqual(["arrow-0", "arrow-1", "arrow-2", "arrow-3", "arrow-4", "arrow-5"]);
+    expect(regions()).toEqual(buildScene(loadPreset("academic"), "Flowchart").edges.flatMap((e, i) => e.arrow ? [`arrow-${i}`] : []));
     fireEvent.mouseLeave(row("connectors.arrowLength"));
     fireEvent.mouseEnter(row("connectors.strokeWidth"));
-    expect(regions()).toEqual(["edge-0", "edge-1", "edge-2", "edge-3", "edge-4", "edge-5", "edge-6"]);
+    expect(regions()).toEqual(buildScene(loadPreset("academic"), "Flowchart").edges.map((_, i) => `edge-${i}`));
   });
   it("measures text bounds from the rendered SVG for typography highlights", () => {
     render(<App />);
@@ -320,6 +322,7 @@ it("applies a quoted font stack from the grouped menu and preserves it in export
   expect(document.querySelector("svg.diagram")?.getAttribute("font-family")).toBe(stack);
   expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).typography.fontFamily).toBe(stack);
   fireEvent.click(screen.getByRole("button", { name: "Export rules" }));
+  await waitFor(() => expect(blobs).toHaveLength(1));
   expect(await blobs[0].text()).toContain(stack);
   fireEvent.click(screen.getByRole("button", { name: "SVG" }));
   const svg = new DOMParser().parseFromString(await blobs[1].text(), "image/svg+xml");

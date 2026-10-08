@@ -1,4 +1,5 @@
 import { presets, presetDescriptions } from "../styles/presets";
+import { buildScene } from "../diagrams/layout";
 import { Diagram } from "../diagrams/Diagram";
 import { Icon } from "./Icon";
 export function PresetGallery({
@@ -36,7 +37,9 @@ export function PresetGallery({
         </div>
       )}
       <div className="preset-gallery">
-        {presets.map((p, i) => (
+        {presets.map((p, i) => {
+          const scene = buildScene(p, "Flowchart");
+          return (
           <button
             key={p.id}
             className={`preset-card ${current === p.id ? "current" : ""}`}
@@ -44,7 +47,10 @@ export function PresetGallery({
           >
             <div
               className="preset-thumbnail"
-              style={{ background: p.colors.background }}
+              style={{
+                background: p.colors.background,
+                aspectRatio: `${scene.width} / ${scene.height}`,
+              }}
             >
               <Diagram config={p} type="Flowchart" />
             </div>
@@ -73,7 +79,8 @@ export function PresetGallery({
               </div>
             </div>
           </button>
-        ))}
+          );
+        })}
       </div>
       <div className="modal-footnote">
         The application stays in Precision Lab. Presets change your flowchart and

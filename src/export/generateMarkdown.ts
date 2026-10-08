@@ -1,39 +1,15 @@
 import type { DiagramStyleConfig, ConfigGroup } from "../styles/schema";
 import { controls, colorLabels } from "../styles/controls";
-const xml = (text: string) =>
-  text.replace(
-    /[&<>"']/g,
-    (c) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&apos;",
-      })[c]!,
-  );
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { Diagram } from "../diagrams/Diagram";
 const md = (text: string) => text.replace(/[|\r\n]/g, " ").replace(/`/g, "\\`");
 export function exampleSVG(c: DiagramStyleConfig): string {
-  const grid = (value: number) => c.layout.snapToGrid ? Math.ceil(value / 8) * 8 : value;
-  const t = c.typography,
-    w = grid(Math.max(
-      c.nodes.minWidth,
-      8 * t.bodySize * 0.67 + 2 * c.nodes.paddingX,
-    )),
-    h = grid(Math.max(
-      c.nodes.minHeight,
-      t.bodySize * t.lineHeight + 2 * c.nodes.paddingY,
-    )),
-    p = grid(c.layout.canvasPadding),
-    g = grid(c.layout.horizontalGap),
-    x2 = p + w + g,
-    width = x2 + w + p,
-    height = h + 2 * p,
-    y = p + h / 2;
-  const shape = (x: number, label: string, role: "input" | "processing") =>
-    `  <rect x="${x}" y="${p}" width="${w}" height="${h}" rx="${Math.min(c.nodes.radius, h / 2)}" fill="${c.colors.background}"/>\n${c.nodes.fillMode === "outline" ? "" : `  <rect x="${x}" y="${p}" width="${w}" height="${h}" rx="${Math.min(c.nodes.radius, h / 2)}" fill="${c.colors[role]}" fill-opacity="${c.nodes.fillMode === "tinted" ? c.effects.highlightOpacity : 1}"/>\n`}  <rect x="${x}" y="${p}" width="${w}" height="${h}" rx="${Math.min(c.nodes.radius, h / 2)}" fill="none" stroke="${c.colors.primary}" stroke-width="${c.nodes.strokeWidth}"${c.effects.shadowEnabled ? ' filter="url(#example-shadow)"' : ""}/>\n  <text x="${x + w / 2}" y="${y + t.bodySize * 0.35}" text-anchor="middle" font-size="${t.bodySize}" font-weight="${t.boldWeight}" fill="${c.colors.text}">${label}</text>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" font-family="${xml(t.fontFamily)}">\n  <defs>\n    <marker id="example-arrow" markerUnits="userSpaceOnUse" markerWidth="${c.connectors.arrowLength}" markerHeight="${c.connectors.arrowWidth}" refX="${c.connectors.arrowLength}" refY="${c.connectors.arrowWidth / 2}" orient="auto">\n      <path d="M0 0 L${c.connectors.arrowLength} ${c.connectors.arrowWidth / 2} L0 ${c.connectors.arrowWidth} Z" fill="${c.colors.connector}"/>\n    </marker>${c.effects.shadowEnabled ? `\n    <filter id="example-shadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="${c.colors.text}" flood-opacity="${c.effects.shadowOpacity}"/></filter>` : ""}\n  </defs>\n  <rect width="${width}" height="${height}" fill="${c.colors.background}"/>\n  <path d="M${p + w} ${y} H${x2}" fill="none" stroke="${c.colors.connector}" stroke-width="${c.connectors.strokeWidth}"${c.connectors.lineStyle === "dashed" ? ' stroke-dasharray="6 5"' : ""} marker-end="url(#example-arrow)"/>\n${shape(p, "Input", "input")}\n${shape(x2, "Process", "processing")}\n</svg>`;
+  return renderToStaticMarkup(createElement(Diagram, {
+    config: c, type: "Flowchart", id: "example-flowchart",
+  })).replace(/>(?=<(?:g|rect|path|defs|filter|marker|text|title|desc|\/svg|\/g|\/defs)\b)/g, ">\n");
 }
+
 export function generateMarkdown(c: DiagramStyleConfig): string {
   const table = (group: ConfigGroup) => {
     if (group === "colors")
@@ -118,8 +94,19 @@ Shadow colors must use the text color with shadowOpacity. When enabled, use dx=0
 Always pair semantic colors with explicit labels, shapes or line conventions. Never rely on color alone.
 
 ## Flowchart Conventions
-Render clearly labeled inputs, processing steps, and outputs with attached arrows and consistent boundary-to-boundary spacing. Use semantic node colors. The shared preview demonstrates Source → Prepare → Valid? → Publish → Done, with a No branch into Review that loops back to Prepare. A Policy note connects to Review with a dashed secondary-color reference link. Prepare, Valid? and Review sit inside a labeled Validation group. Use annotation color at highlightOpacity for the group background and accent color for the decision outline. Adapt the content to the requested workflow.
-For branching workflows, use diamond-shaped decisions with explicit outcome labels such as Yes / No on outgoing edges. Use distinct start/end shapes when needed. Keep the reading direction consistent, route loops around unrelated nodes, and preserve configured typography, padding, and connector tokens.
+Render clearly labeled inputs, processing steps, and outputs with attached arrows and consistent boundary-to-boundary spacing. Use semantic node colors and diamond-shaped decisions. The complete reference below uses the same workflow as every live preset. Adapt its content to the requested workflow while preserving the applicable constraints.
+
+### Structural Constraints Demonstrated
+- **Hierarchy:** Delivery Pipeline contains Validation & Recovery and Parallel Processing. Render parent groups before children. Keep child groups within parent padding, reserve a header band for each group, and keep nodes, connectors and branch labels out of header text.
+- **Validation:** Source → Prepare → Valid? has two explicit outcomes. Yes advances to Dispatch; No enters Retry?. Diamonds have enough interior room for their labels and padding. Use accent for decision outlines.
+- **Bounded recovery:** Source initializes attempt=1. Retry? routes attempts below 3 to Review, which fixes fields, increments the attempt count, and returns to Prepare. At the limit, route to Failed. Do not draw an unbounded retry loop or merge the limit outcome with success.
+- **Parallel fork:** Dispatch starts BOTH Enrich and Audit. These are concurrent tasks, not mutually exclusive Yes / No outcomes. Give the branches balanced spacing and distinct arrows.
+- **Synchronization:** Join waits for BOTH tasks to complete before Publish. Preserve this all-of dependency; an incoming path does not alone imply permission to continue. Label the synchronization explicitly.
+- **Outcome distinction:** Publish → Sent? ends at Done on Yes and Failed on No. Retry exhaustion also ends at Failed. Start and end nodes use capsule geometry; normal operations use rectangles. Success and failure remain distinguishable through labels even with identical output colors.
+- **Annotation:** Policy states the retry limit and connects to Prepare through a dashed secondary-color reference link without an arrowhead. It is explanatory information, not an executable step or additional control-flow branch.
+- **Long failure route:** The retry-limit path uses a separate gutter around unrelated nodes and connects to the Failed boundary. A detour is allowed even when preferred routing is straight. Shared fork/join segments represent intentional shared control flow; incidental edge intersections must not imply junctions.
+- **Visual roles:** Prepare is the focal primary outline; decisions use accent; other shapes and group boundaries use border. Notes and group backgrounds use annotation, with highlightOpacity on groups. All typography and spacing follow the tokens above.
+- **Growth:** Recompute node dimensions, row heights, column widths, group bounds and route gutters when tokens change. Preserve minimum gaps and padding; expand the canvas instead of compressing text or allowing collisions.
 
 ## Text Overflow and Collision Rules
 Prefer legibility over compactness. Grow nodes or wrap text using deliberate SVG tspan positions; never clip, overlap, or silently shrink labels below the configured size. Native SVG text does not auto-wrap. Preserve configured padding around all text. Enlarge the viewBox and canvas when content grows. Include stroked shapes and shadow/filter extents in bounds checks.
@@ -159,8 +146,8 @@ Grow a node or wrap text instead of shrinking its font. Reroute an edge instead 
 - [ ] No external dependencies or unrequested decorative effects.
 - [ ] Bounds, labels, connections, contrast and SVG validity were checked before finishing.
 
-## Example SVG Snippet
-This two-node example demonstrates the configured palette, primary outline, typography and attached arrow. Adapt content and expand the layout as needed.
+## Complete Reference SVG
+This is the full shared preview rendered with the current tokens, including nested groups, bounded recovery, parallel dependencies and both terminal outcomes. Use it together with the structural constraints above; its workflow is illustrative rather than mandatory.
 
 \`\`\`svg
 ${exampleSVG(c)}

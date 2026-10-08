@@ -92,7 +92,9 @@ export function Diagram({
     >
       <title>{`${type} — ${c.name}`}</title>
       <desc>
-        Fixed-content technical diagram using the active style configuration.
+        {type === "Flowchart"
+          ? "A delivery pipeline with nested validation and parallel processing groups, a three-attempt recovery loop, an all-of join, and success and failure outcomes."
+          : "Fixed-content technical diagram using the active style configuration."}
       </desc>
       <defs>
         <marker
@@ -109,7 +111,8 @@ export function Diagram({
             fill={c.colors.connector}
           />
         </marker>
-        <filter id={shadow} x="-50%" y="-50%" width="200%" height="200%">
+        {c.effects.shadowEnabled && (
+          <filter id={shadow} x="-50%" y="-50%" width="200%" height="200%">
           <feDropShadow
             dx="0"
             dy="3"
@@ -117,7 +120,8 @@ export function Diagram({
             floodColor={c.colors.text}
             floodOpacity={c.effects.shadowOpacity}
           />
-        </filter>
+          </filter>
+        )}
       </defs>
       <rect width={s.width} height={s.height} fill={c.colors.background} />
       {s.groups.map((g, i) => (
@@ -151,6 +155,7 @@ export function Diagram({
         <path
           key={`edge-${i}`}
           data-edge={i}
+          data-flow-edge={e.id}
           d={e.points.map(([x, y], j) => `${j ? "L" : "M"}${x} ${y}`).join(" ")}
           fill="none"
           stroke={e.subtle ? c.colors.secondary : c.colors.connector}

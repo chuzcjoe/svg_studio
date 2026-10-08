@@ -84,13 +84,13 @@ export function getStyleImpact(
     switch (key) {
       case "background": return result("Canvas background and the base beneath node fills.", [{ id: "canvas", x: 3, y: 3, width: scene.width - 6, height: scene.height - 6, outline: true }]);
       case "primary": return result("The diagram title and the Prepare node outline.", [...title, ...nodeOutlines((n) => !!n.primary)]);
-      case "secondary": return result("The dashed reference link from Policy to Review.", subtleEdges);
-      case "accent": return result("The decision diamond's outline distinguishes the validation step.", nodeOutlines((n) => !!n.accent));
+      case "secondary": return result("The dashed reference link from Policy to Prepare.", subtleEdges);
+      case "accent": return result("Decision diamond outlines distinguish validation, retry and delivery checks.", nodeOutlines((n) => !!n.accent));
       case "text": return result("Main node labels; also the shadow color when shadows are enabled.", [...bodies, ...(c.effects.shadowEnabled ? outlines : [])]);
       case "mutedText": return result("Subtitles, branch labels, the group heading and the caption.", secondaryText);
-      case "border": return result("Ordinary node outlines and the Validation group boundary.", [...nodeOutlines((n) => !n.primary && !n.accent), ...groupOutlines]);
+      case "border": return result("Ordinary node outlines and the nested group boundaries.", [...nodeOutlines((n) => !n.primary && !n.accent), ...groupOutlines]);
       case "connector": return result("Directed flow lines and their arrowheads.", [...mainEdges, ...arrows]);
-      case "annotation": return result("The Validation group background and the Policy note fill.", [...groupBoxes, ...(c.nodes.fillMode === "outline" ? [] : boxes.filter((_, i) => nodes[i].role === "annotation"))]);
+      case "annotation": return result("The nested group backgrounds and the Policy note fill.", [...groupBoxes, ...(c.nodes.fillMode === "outline" ? [] : boxes.filter((_, i) => nodes[i].role === "annotation"))]);
       case "input": case "processing": case "output":
         return c.nodes.fillMode === "outline"
           ? inactive("Node fills are hidden in Outline mode. Choose Solid or Tinted to see this color.")
@@ -111,7 +111,7 @@ export function getStyleImpact(
   if (group === "nodes") {
     switch (key) {
       case "radius": return result("Corners on rectangular nodes and the group boundary. Decision and terminal shapes keep their geometry.", [...nodeOutlines((n) => !n.shape), ...groupOutlines]);
-      case "strokeWidth": return result("Outline thickness on nodes and the Validation group.", [...outlines, ...groupOutlines]);
+      case "strokeWidth": return result("Outline thickness on nodes and the nested groups.", [...outlines, ...groupOutlines]);
       case "paddingX": case "paddingY": {
         const horizontal = key === "paddingX";
         return result(horizontal
@@ -141,7 +141,7 @@ export function getStyleImpact(
       case "arrowWidth": return result("Width across each directional arrowhead's base.", arrows);
       case "strokeWidth": return result("Thickness of flow lines and the supporting reference link.", edges);
       case "lineStyle": return result("Solid or dashed flow lines. The Policy reference link stays dashed.", mainEdges);
-      case "routing": return result("Straight or orthogonal routes, especially the No branch into Review.", mainEdges);
+      case "routing": return result("Straight or orthogonal routes, including parallel branches; failure paths retain their safe detours.", mainEdges);
     }
   }
   if (group === "layout") {
@@ -152,8 +152,8 @@ export function getStyleImpact(
     }));
     switch (key) {
       case "horizontalGap": return result("Space between neighboring columns and node boundaries.", spaces);
-      case "verticalGap": return result("Space between the validation row and the review row.", spaces);
-      case "groupPadding": return result("Inner margin around the Validation group and its heading.", spaces);
+      case "verticalGap": return result("Space between neighboring workflow rows and parallel branches.", spaces);
+      case "groupPadding": return result("Inner margin around the nested groups and their headings.", spaces);
       case "canvasPadding": return result("Minimum margin around the entire workflow.", [
         { id: "margin-top", x: 2, y: 2, width: scene.width - 4, height: padding - 2 },
         { id: "margin-bottom", x: 2, y: scene.height - padding, width: scene.width - 4, height: padding - 2 },
@@ -164,7 +164,7 @@ export function getStyleImpact(
     }
   }
   if (group === "effects") {
-    if (key === "highlightOpacity") return result("Opacity of the Validation group background and, in Tinted mode, node fills.", [...groupBoxes, ...(c.nodes.fillMode === "tinted" ? boxes : [])]);
+    if (key === "highlightOpacity") return result("Opacity of nested group backgrounds and, in Tinted mode, node fills.", [...groupBoxes, ...(c.nodes.fillMode === "tinted" ? boxes : [])]);
     if (key === "shadowOpacity" && !c.effects.shadowEnabled) return inactive("Shadows are off. Enable Node shadows to see their opacity change.");
     return result(key === "shadowEnabled" ? "Enable or remove the soft shadow around each node." : "Opacity of each node's shadow.", boxes.map((box) => ({
       ...box, path: undefined, area: false, x: box.x - 5, y: box.y - 2,
