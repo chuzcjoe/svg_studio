@@ -156,13 +156,14 @@ export default function App() {
             {canUndo && (
               <button
                 className="quiet"
+                aria-label="Undo"
                 onClick={() => {
                   undo();
                   notify("Previous configuration restored.");
                 }}
               >
                 <Icon name="reset" size={14} />
-                Undo
+                <span>Undo</span>
               </button>
             )}
             <button
@@ -305,11 +306,10 @@ export default function App() {
                 className={`diagram-stage ${zoom === "actual" ? "actual" : ""}`}
                 ref={canvasRef}
                 style={
-                  zoom === "actual"
-                    ? ({
-                        "--svg-width": `${scene.width}px`,
-                      } as React.CSSProperties)
-                    : undefined
+                  {
+                    "--svg-width": `${scene.width}px`,
+                    "--svg-aspect": `${scene.width} / ${scene.height}`,
+                  } as React.CSSProperties
                 }
               >
                 <Diagram config={config} type={type} />
