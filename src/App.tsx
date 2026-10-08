@@ -3,9 +3,8 @@ import { Icon } from "./components/Icon";
 import { StyleEditor } from "./components/StyleEditor";
 import { PresetGallery } from "./components/PresetGallery";
 import { Modal } from "./components/Modal";
-import { Diagram } from "./diagrams/Diagram";
 import { DiagramViewport } from "./components/DiagramViewport";
-import { diagramTypes, buildScene, type DiagramType } from "./diagrams/layout";
+import { buildScene } from "./diagrams/layout";
 import { loadPreset, isModified } from "./styles/presets";
 import { type ConfigGroup, parseConfigJSON } from "./styles/schema";
 import { contrastIssues } from "./styles/contrast";
@@ -22,46 +21,11 @@ export function downloadFile(content: string, name: string, type: string) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-const descriptions: Record<DiagramType, [string, string]> = {
-  Flowchart: [
-    "From source to result.",
-    "Node geometry, semantic colors and attached arrowheads.",
-  ],
-  "Neural Network": [
-    "A clear path through the layers.",
-    "Circular units, subtle connections and labeled network structure.",
-  ],
-  "Matrix / Tensor": [
-    "Structure you can read at a glance.",
-    "Aligned cells, dimension labels and shared highlight tokens.",
-  ],
-  "ML Architecture": [
-    "Attention, without the distraction.",
-    "Grouped projections, normalized weights and a deliberate V route.",
-  ],
-  "System Architecture": [
-    "Every component in its place.",
-    "CPU, GPU and memory — clear boundaries and transfer directions.",
-  ],
-  "Sequence Diagram": [
-    "The order makes the story.",
-    "Participant lifelines, ordered messages and dashed return arrows.",
-  ],
-};
-const shortNames: Record<DiagramType, string> = {
-  Flowchart: "Flowchart",
-  "Neural Network": "Neural net",
-  "Matrix / Tensor": "Tensor",
-  "ML Architecture": "Attention",
-  "System Architecture": "System",
-  "Sequence Diagram": "Sequence",
-};
 export default function App() {
   const { theme, toggleTheme } = useTheme();
   const { config, update, replace, undo, canUndo, storageWarning, restored } =
     useStyleConfig();
   const [group, setGroup] = useState<ConfigGroup>("colors"),
-    [type, setType] = useState<DiagramType>("ML Architecture"),
     [modal, setModal] = useState<"presets" | "reset" | null>(null),
     [mobileTab, setMobileTab] = useState("preview"),
     [toast, setToast] = useState(""),
@@ -70,7 +34,7 @@ export default function App() {
     canvasRef = useRef<HTMLDivElement>(null),
     toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modified = isModified(config),
-    scene = useMemo(() => buildScene(config, type), [config, type]),
+    scene = useMemo(() => buildScene(config, "Flowchart"), [config]),
     issues = contrastIssues(config);
   useEffect(
     () => () => {
@@ -123,7 +87,7 @@ export default function App() {
     if (svg) {
       downloadFile(
         new XMLSerializer().serializeToString(svg),
-        `${type.toLowerCase().replace(/[^a-z]+/g, "-")}.svg`,
+        "flowchart.svg",
         "image/svg+xml;charset=utf-8",
       );
       notify("Standalone SVG downloaded.");
@@ -143,7 +107,7 @@ export default function App() {
               <Icon name="code" size={22} />
             </span>
             <span>
-              <b>SVG</b> Style Studio<small>YOUR DIAGRAM DESIGN SYSTEM</small>
+              <b>SVG</b> Style Studio<small>YOUR FLOWCHART DESIGN SYSTEM</small>
             </span>
           </a>
           <div className="header-status">
@@ -222,9 +186,9 @@ export default function App() {
         </header>
         <section className="workspace-heading">
           <div>
-            <div className="eyebrow">DIAGRAM DESIGN SYSTEM</div>
+            <div className="eyebrow">FLOWCHART DESIGN SYSTEM</div>
             <h1>A little structure. A lot of clarity.</h1>
-            <p>Define once. Make every diagram feel like yours.</p>
+            <p>Define your style. Make every flow clear.</p>
           </div>
           <div className="workspace-meta">
             <button
@@ -298,33 +262,19 @@ export default function App() {
               </span>
               <span className="auto-label">Updates instantly</span>
             </div>
-            <nav className="diagram-tabs" aria-label="Diagram types">
-              {diagramTypes.map((d) => (
-                <button
-                  key={d}
-                  className={type === d ? "active" : ""}
-                  aria-pressed={type === d}
-                  onClick={() => setType(d)}
-                >
-                  {shortNames[d]}
-                </button>
-              ))}
-            </nav>
             <div
               className="canvas"
               style={{ background: config.colors.background }}
             >
               <div className="canvas-top">
-                <span>
-                  {type === "ML Architecture" ? "Multi-head attention" : type}
-                </span>
+                <span>Flowchart</span>
                 <span>
                   {scene.width} × {scene.height}
                 </span>
               </div>
               <DiagramViewport
                 config={config}
-                type={type}
+                type="Flowchart"
                 width={scene.width}
                 height={scene.height}
                 viewportRef={canvasRef}
@@ -341,45 +291,25 @@ export default function App() {
             )}
             <div className="preview-caption">
               <div>
-                <h2>{descriptions[type][0]}</h2>
-                <p>{descriptions[type][1]}</p>
+                <h2>From source to result.</h2>
+                <p>Node geometry, semantic colors and attached arrowheads.</p>
               </div>
               <button className="svg-download" onClick={saveSVG}>
                 <Icon name="download" size={13} />
                 SVG
               </button>
             </div>
-            <div className="small-previews">
-              {diagramTypes
-                .filter((d) => d !== type)
-                .slice(0, 3)
-                .map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setType(d)}
-                    aria-label={`Preview ${d}`}
-                  >
-                    <div style={{ background: config.colors.background }}>
-                      <Diagram config={config} type={d} />
-                    </div>
-                    <span>
-                      {shortNames[d]}
-                      <Icon name="arrow" size={12} />
-                    </span>
-                  </button>
-                ))}
-            </div>
             <div className="preview-footer">
               <span>
                 <span className="status-dot" />
-                All diagrams share your style tokens
+                Your flowchart follows your style tokens
               </span>
               <span>SVG · no dependencies</span>
             </div>
           </main>
         </div>
         <footer className="studio-footer">
-          <span>DESIGNED FOR DIAGRAMS THAT EXPLAIN.</span>
+          <span>DESIGNED FOR FLOWS THAT EXPLAIN.</span>
           <span>Local first. Yours by design.</span>
         </footer>
       </div>
@@ -387,7 +317,7 @@ export default function App() {
         <Modal
           label={
             modal === "presets"
-              ? "Choose a diagram preset"
+              ? "Choose a flowchart style"
               : "Reset to preset defaults"
           }
           onClose={() => setModal(null)}

@@ -258,9 +258,9 @@ export function StyleEditor({
         <div className="tip">
           <Icon name="info" size={13} />
           <p>
-            One style. Every diagram.
+            One style. A clearer flow.
             <span>
-              These tokens update all six previews and your exported rules.
+              These tokens update your flowchart and exported rules.
             </span>
           </p>
         </div>

@@ -638,28 +638,6 @@ button:disabled {
   color: var(--faint);
   font-weight: 400;
 }
-.diagram-tabs {
-  height: 60px;
-  min-height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2px;
-  border-bottom: 1px solid var(--line);
-  padding: 0 13px;
-}
-.diagram-tabs button {
-  font-size: 13px;
-  color: var(--text-secondary);
-  padding: 11px 13px;
-  border-radius: 4px;
-  white-space: nowrap;
-}
-.diagram-tabs button.active {
-  background: var(--active-bg);
-  color: var(--accent-text);
-  font-weight: 550;
-}
 .canvas {
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -775,43 +753,6 @@ button:disabled {
   border-radius: 4px;
   padding: 8px;
   white-space: nowrap;
-}
-.small-previews {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  padding: 0 18px;
-}
-.small-previews > button {
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  overflow: hidden;
-  text-align: left;
-  padding: 0;
-  background: var(--surface);
-  min-width: 0;
-}
-.small-previews > button:hover {
-  border-color: var(--hover-border);
-}
-.small-previews > button > div {
-  height: 160px;
-  padding: 5px;
-  display: grid;
-  place-items: center;
-}
-.small-previews .diagram {
-  width: 100%;
-  height: 100%;
-}
-.small-previews > button > span {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px solid var(--line);
-  padding: 10px;
-  font-size: 12px;
-  color: var(--text-secondary);
 }
 .preview-footer {
   display: flex;
@@ -1132,9 +1073,6 @@ button:disabled {
   .diagram-stage {
     height: auto;
   }
-  .small-previews > button > div {
-    height: 130px;
-  }
 }
 @media (max-width: 760px) {
   .app-shell {
@@ -1314,16 +1252,6 @@ button:disabled {
     font-size: 14px;
     padding: 11px;
   }
-  .diagram-tabs {
-    padding: 0 7px;
-    height: 48px;
-    min-height: 48px;
-    gap: 1px;
-  }
-  .diagram-tabs button {
-    padding: 8px 5px;
-    font-size: 12px;
-  }
   .panel-title {
     font-size: 14px;
     padding-inline: 15px;
@@ -1379,17 +1307,6 @@ button:disabled {
   .svg-download {
     font-size: 12px;
     padding: 7px;
-  }
-  .small-previews {
-    padding: 0 12px;
-    gap: 7px;
-  }
-  .small-previews > button > div {
-    height: 70px;
-  }
-  .small-previews > button > span {
-    padding: 9px 7px;
-    font-size: 12px;
   }
   .preview-footer {
     font-size: 11px;
@@ -1469,10 +1386,6 @@ button:disabled {
   .workspace-heading h1 {
     font-size: 28px;
   }
-  .diagram-tabs button {
-    font-size: 12px;
-    padding: 7px 4px;
-  }
   .control-groups button {
     font-size: 11px;
   }
@@ -1489,9 +1402,6 @@ button:disabled {
   }
   .diagram-stage {
     min-height: 0;
-  }
-  .small-previews > button > div {
-    height: 160px;
   }
 }
 @media (max-width: 760px) {
@@ -1560,9 +1470,6 @@ button:disabled {
   width: 18px;
   height: 18px;
 }
-.small-previews > button > span {
-  padding: 13px 15px;
-}
 @media (max-width: 760px) {
   .app-shell {
     padding-inline: 12px;
@@ -1607,25 +1514,6 @@ button:disabled {
   .color-value input:not([type]) {
     font-size: 13px;
     width: 84px;
-  }
-  .diagram-tabs {
-    height: auto;
-    min-height: 56px;
-    overflow-x: auto;
-    justify-content: flex-start;
-    gap: 4px;
-    padding: 8px;
-  }
-  .diagram-tabs button {
-    font-size: 13px;
-    padding: 10px;
-  }
-  .small-previews > button > div {
-    height: 95px;
-  }
-  .small-previews > button > span {
-    padding: 10px 7px;
-    font-size: 11px;
   }
   .canvas-bottom {
     flex-wrap: wrap;

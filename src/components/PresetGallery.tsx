@@ -18,7 +18,7 @@ export function PresetGallery({
         <div>
           <div className="eyebrow">A STARTING POINT, NOT A LIMIT</div>
           <h2>Find your visual language.</h2>
-          <p>Same diagram. Four distinct styles. Make one your own.</p>
+          <p>Same flowchart. Four distinct styles. Make one your own.</p>
         </div>
         <button
           className="icon-button"
@@ -76,7 +76,7 @@ export function PresetGallery({
         ))}
       </div>
       <div className="modal-footnote">
-        The application stays in Precision Lab. Presets change your diagrams and
+        The application stays in Precision Lab. Presets change your flowchart and
         exported rules.
       </div>
     </>

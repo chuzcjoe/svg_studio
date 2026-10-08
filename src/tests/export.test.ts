@@ -32,19 +32,23 @@ describe("Markdown export", () => {
     expect(md).toContain("non-overlapping geometry");
     expect(md).toContain("No prose rule can guarantee identical output");
   });
-  it("contains all diagram conventions, constraints and conflict priorities", () => {
+  it("exports flowchart conventions, constraints and conflict priorities", () => {
     const md = generateMarkdown(loadPreset("academic"));
     for (const title of [
-      "Flowcharts",
+      "Flowchart Conventions",
+      "Validation Checklist",
+      "Priority and Conflict Resolution",
+    ])
+      expect(md).toContain(title);
+    for (const title of [
       "Neural Networks",
       "Matrices and Tensors",
       "ML / Attention Architecture",
       "System Architecture",
       "Sequence Diagrams",
-      "Validation Checklist",
-      "Priority and Conflict Resolution",
     ])
-      expect(md).toContain(title);
+      expect(md).not.toContain(title);
+    expect(md).toContain("diamond-shaped decisions");
     expect(md).toContain("Grow a node or wrap text");
     expect(md).toContain("no external dependencies");
   });

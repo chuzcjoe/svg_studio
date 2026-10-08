@@ -42,7 +42,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe("user workflow", () => {
-  it("updates every preview and persists representative settings", () => {
+  it("updates the flowchart and persists representative settings", () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText("Primary color"), {
       target: { value: "#124abc" },
@@ -56,13 +56,21 @@ describe("user workflow", () => {
     });
     expect(
       document
-        .querySelector('.diagram-stage [data-node="q"] rect')
+        .querySelector('.diagram-stage [data-node="process"] rect')
         ?.getAttribute("rx"),
     ).toBe("20");
-    fireEvent.click(screen.getByRole("button", { name: "Sequence" }));
     expect(
-      screen.getByRole("img", { name: "Sequence Diagram preview" }),
+      screen.getByRole("img", { name: "Flowchart preview" }),
     ).toBeTruthy();
+    expect(
+      screen.queryByRole("navigation", { name: "Diagram types" }),
+    ).toBeNull();
+    expect(document.querySelectorAll("main svg[role=img]")).toHaveLength(1);
+    expect(
+      screen.queryByRole("button", {
+        name: /Sequence|Attention|Neural net|Tensor|System/,
+      }),
+    ).toBeNull();
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).nodes.radius).toBe(
       20,
     );

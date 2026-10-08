@@ -63,7 +63,7 @@ export function generateMarkdown(c: DiagramStyleConfig): string {
         .join("\n")
     );
   };
-  return `# SVG Diagram Style Specification
+  return `# SVG Flowchart Style Specification
 
 Preset: **${md(c.name)}**  
 Specification version: **${c.schemaVersion}**  
@@ -71,7 +71,7 @@ Style ID: \`${md(c.id)}\`
 Base preset ID: \`${c.basePresetId}\`
 
 ## Purpose and Scope
-Create consistent, readable technical SVG diagrams for research, machine learning, GPU computing, software architecture, and documentation. This specification constrains visual style, not technical content.
+Create consistent, readable SVG flowcharts for processes, workflows, and documentation. This specification constrains visual style, not technical content.
 
 ## Output Contract
 Generate a standalone, valid SVG with the SVG namespace, an explicit viewBox, and no external dependencies. Use native SVG geometry and text. All geometry tokens below use CSS pixels (px). The SVG must retain its intended meaning at typical blog column widths.
@@ -90,7 +90,7 @@ Node width and height are minima. Expand nodes for text, padding, and line heigh
 
 ### Connectors and Arrowheads
 ${table("connectors")}
-Use connector color, round line caps and joins, and a consistent filled triangular arrowhead. Arrow length and width are in user-space px (markerUnits="userSpaceOnUse"); align refX with the tip and refY with half the width. Solid lines have no dash pattern. Dashed lines use a 6 px dash and 5 px gap. Diagram conventions may require dashed lifelines and return messages even when the default line style is solid.
+Use connector color, round line caps and joins, and a consistent filled triangular arrowhead. Arrow length and width are in user-space px (markerUnits="userSpaceOnUse"); align refX with the tip and refY with half the width. Solid lines have no dash pattern. Dashed lines use a 6 px dash and 5 px gap. Label branches explicitly so their meaning does not depend on line style or color.
 
 ### Layout and Spacing
 ${table("layout")}
@@ -98,38 +98,28 @@ Horizontal and vertical gaps are between shape boundaries. When snapToGrid is tr
 
 ### Effects
 ${table("effects")}
-Shadow colors must use the text color with shadowOpacity. When enabled, use dx=0 px, dy=3 px, stdDeviation=3 px; allow enough filter bounds to avoid clipped shadows. highlightOpacity controls tinted fills, matrix highlights, and subtle group backgrounds. If shadows are disabled, omit them. Avoid unnecessary gradients, decorative effects, and undeclared colors.
+Shadow colors must use the text color with shadowOpacity. When enabled, use dx=0 px, dy=3 px, stdDeviation=3 px; allow enough filter bounds to avoid clipped shadows. highlightOpacity controls tinted node fills, highlights, and subtle group backgrounds. If shadows are disabled, omit them. Avoid unnecessary gradients, decorative effects, and undeclared colors.
 
 ## Semantic Mapping
 | Meaning | Color token / treatment |
 | --- | --- |
-| Input, embeddings, host-side CPU | input |
-| Transformation, hidden layers, Q/K/V, GPU | processing |
-| Output, results, shared memory | output |
+| Input, starting data | input |
+| Process, transformation steps | processing |
+| Output, results | output |
 | Group backgrounds, notes | annotation |
 | Focal nodes and titles | primary |
-| Subtle network edges and lifelines | secondary |
-| Matrix and tensor highlights | accent at highlightOpacity |
+| Secondary steps and supporting paths | secondary |
+| Emphasized steps and branch highlights | accent at highlightOpacity |
 | Node labels | text |
-| Subtitles, dimensions and annotations | mutedText |
+| Subtitles and annotations | mutedText |
 | General shape outlines and group boundaries | border |
-| Directed message and flow edges / arrowheads | connector |
+| Directed flow edges / arrowheads | connector |
 | Canvas and outline-mode fills | background |
 Always pair semantic colors with explicit labels, shapes or line conventions. Never rely on color alone.
 
-## Diagram-Specific Conventions
-### Flowcharts
-Render Input → Process → Output with attached arrows and consistent boundary-to-boundary horizontal spacing. Use semantic node colors.
-### Neural Networks
-Use circular units organized into labeled layers. Connect circle boundaries, not centers. Use subtle secondary-color connections; dense layer connections do not require arrowheads.
-### Matrices and Tensors
-Align equal-size cells. Put dimension labels outside the grid with adequate padding. Identify highlighted rows or channels with annotations as well as accent color.
-### ML / Attention Architecture
-Show Q and K feeding attention scores, scaled by √dₖ, followed by Softmax; combine the normalized weights with V to produce output. Group the attention computation and route V around intervening nodes. This detour is required even when straight routing is preferred.
-### System Architecture
-Clearly label CPU, GPU, memory and their containers. Show CPU/GPU transfer directions separately and attach arrows to device boundaries.
-### Sequence Diagrams
-Use labeled participants and dashed lifelines. Messages progress from top to bottom; label messages above their horizontal arrows. Return messages may use dashed connectors. Keep labels clear of lifelines.
+## Flowchart Conventions
+Render clearly labeled inputs, processing steps, and outputs with attached arrows and consistent boundary-to-boundary spacing. Use semantic node colors. The preview demonstrates Input → Process → Output; adapt the content to the requested workflow.
+For branching workflows, use diamond-shaped decisions with explicit outcome labels such as Yes / No on outgoing edges. Use distinct start/end shapes when needed. Keep the reading direction consistent, route loops around unrelated nodes, and preserve configured typography, padding, and connector tokens.
 
 ## Text Overflow and Collision Rules
 Prefer legibility over compactness. Grow nodes or wrap text using deliberate SVG tspan positions; never clip, overlap, or silently shrink labels below the configured size. Native SVG text does not auto-wrap. Preserve configured padding around all text. Enlarge the viewBox and canvas when content grows. Include stroked shapes and shadow/filter extents in bounds checks.
