@@ -186,9 +186,7 @@ export default function App() {
         </header>
         <section className="workspace-heading">
           <div>
-            <div className="eyebrow">FLOWCHART DESIGN SYSTEM</div>
-            <h1>A little structure. A lot of clarity.</h1>
-            <p>Define your style. Make every flow clear.</p>
+            <h1>AI Readable Design</h1>
           </div>
           <div className="workspace-meta">
             <button
