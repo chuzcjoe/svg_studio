@@ -225,48 +225,6 @@ button:disabled {
   color: var(--muted);
   margin-top: 9px;
 }
-.workspace-meta {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-.current-style {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  background: var(--surface);
-  padding: 9px 10px;
-  font-size: 14px;
-}
-.style-dot {
-  width: 7px;
-  height: 7px;
-  display: inline-block;
-  border-radius: 50%;
-}
-.modified-badge {
-  font-size: 12px;
-  background: var(--badge-bg);
-  color: var(--text-secondary);
-  padding: 5px 7px;
-  border-radius: 4px;
-}
-.modified-badge.modified {
-  background: var(--active-bg);
-  color: var(--accent-text);
-}
-.schema {
-  font:
-    12px Menlo,
-    Consolas,
-    monospace;
-  color: var(--faint);
-  margin-left: 5px;
-}
 .workspace {
   display: grid;
   grid-template-columns: clamp(320px, 22vw, 400px) minmax(0, 1fr);
@@ -1055,12 +1013,6 @@ button:disabled {
     min-height: 0;
     max-height: none;
   }
-  .schema {
-    display: none;
-  }
-  .workspace-meta {
-    max-width: 310px;
-  }
   .header-actions {
     gap: 16px;
   }
@@ -1131,19 +1083,6 @@ button:disabled {
     margin-top: 8px;
   }
   .eyebrow {
-    font-size: 12px;
-  }
-  .workspace-meta {
-    justify-content: flex-start;
-    max-width: none;
-    margin-top: 18px;
-    gap: 9px;
-  }
-  .current-style {
-    font-size: 13px;
-    padding: 7px 9px;
-  }
-  .modified-badge {
     font-size: 12px;
   }
   .mobile-nav {

@@ -194,23 +194,6 @@ export default function App() {
           <div>
             <h1>AI Readable Design</h1>
           </div>
-          <div className="workspace-meta">
-            <button
-              className="current-style"
-              onClick={() => setModal("presets")}
-            >
-              <span
-                className="style-dot"
-                style={{ background: config.colors.primary }}
-              />
-              {config.name}
-              <Icon name="chevron" size={12} />
-            </button>
-            <span className={`modified-badge ${modified ? "modified" : ""}`}>
-              {modified ? "Customized" : "Preset defaults"}
-            </span>
-            <span className="schema">SCHEMA v1.0</span>
-          </div>
         </section>
         {storageWarning && (
           <div className="banner" role="status">
