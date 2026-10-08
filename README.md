@@ -26,7 +26,7 @@ npm run preview
 
 1. Start with Academic Minimal, Dark Engineering, Modern Soft, or Publication Monochrome. Preset cards show the same flowchart for comparison.
 2. Edit 39 validated tokens across Colors, Typography, Nodes, Connectors, Layout, and Effects.
-3. Inspect six deterministic native SVG examples: Flowchart, Neural Network, Matrix / Tensor, ML Architecture, System Architecture, and Sequence Diagram. Use Auto / 100% and Fit to canvas, or download the focused SVG.
+3. Inspect six deterministic native SVG examples: Flowchart, Neural Network, Matrix / Tensor, ML Architecture, System Architecture, and Sequence Diagram. Use the − / + buttons to zoom from 25% to 400% relative to the fitted view. Hold the mouse or touch pointer, then drag to pan. Fit to canvas resets both zoom and pan; switching diagrams also resets the view. Keyboard users can focus the preview and use + / −, arrow keys, and Home. Zoom and pan only affect the on-screen view; downloaded SVG geometry stays unchanged.
 4. Click **Export rules** in the header to download `svg-style-rules.md` directly. Rules do not occupy a panel or require an intermediate dialog.
 5. Use **Save style JSON** at the bottom of the style editor to export `svg-style.json` and keep a complete versioned configuration. Import restores all tokens; invalid data is rejected without changing your current work.
 

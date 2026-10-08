@@ -4,6 +4,7 @@ import { StyleEditor } from "./components/StyleEditor";
 import { PresetGallery } from "./components/PresetGallery";
 import { Modal } from "./components/Modal";
 import { Diagram } from "./diagrams/Diagram";
+import { DiagramViewport } from "./components/DiagramViewport";
 import { diagramTypes, buildScene, type DiagramType } from "./diagrams/layout";
 import { loadPreset, isModified } from "./styles/presets";
 import { type ConfigGroup, parseConfigJSON } from "./styles/schema";
@@ -63,7 +64,6 @@ export default function App() {
     [type, setType] = useState<DiagramType>("ML Architecture"),
     [modal, setModal] = useState<"presets" | "reset" | null>(null),
     [mobileTab, setMobileTab] = useState("preview"),
-    [zoom, setZoom] = useState<"fit" | "actual">("fit"),
     [toast, setToast] = useState(""),
     [importError, setImportError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null),
@@ -322,44 +322,13 @@ export default function App() {
                   {scene.width} × {scene.height}
                 </span>
               </div>
-              <div
-                className={`diagram-stage ${zoom === "actual" ? "actual" : ""}`}
-                ref={canvasRef}
-                style={
-                  {
-                    "--svg-width": `${scene.width}px`,
-                    "--svg-aspect": `${scene.width} / ${scene.height}`,
-                  } as React.CSSProperties
-                }
-              >
-                <Diagram config={config} type={type} />
-              </div>
-              <div className="canvas-bottom">
-                <span className="canvas-tag">{type.toUpperCase()}</span>
-                <div>
-                  <button
-                    aria-pressed={zoom === "actual"}
-                    onClick={() =>
-                      setZoom(zoom === "actual" ? "fit" : "actual")
-                    }
-                  >
-                    {zoom === "actual" ? "100%" : "Auto"}
-                  </button>
-                  <span>│</span>
-                  <button
-                    onClick={() => {
-                      setZoom("fit");
-                      if (canvasRef.current) {
-                        canvasRef.current.scrollLeft = 0;
-                        canvasRef.current.scrollTop = 0;
-                      }
-                    }}
-                  >
-                    <Icon name="fit" size={11} />
-                    Fit to canvas
-                  </button>
-                </div>
-              </div>
+              <DiagramViewport
+                config={config}
+                type={type}
+                width={scene.width}
+                height={scene.height}
+                viewportRef={canvasRef}
+              />
             </div>
             {issues.length > 0 && (
               <div className="contrast-notice" role="status">
