@@ -1492,9 +1492,6 @@ button:disabled {
   user-select: none;
   cursor: grab;
 }
-.interactive-viewport.holding {
-  cursor: wait;
-}
 .interactive-viewport.panning {
   cursor: grabbing;
   box-shadow: inset 0 0 0 2px var(--hover-border);

@@ -1,5 +1,4 @@
 import {
-  act,
   cleanup,
   fireEvent,
   render,
@@ -13,7 +12,6 @@ import {
   constrainView,
   fitScale,
   fitView,
-  HOLD_TO_PAN_MS,
   MAX_ZOOM,
   MIN_ZOOM,
   zoomView,
@@ -63,7 +61,6 @@ class TestPointerEvent extends MouseEvent {
   }
 }
 beforeEach(() => {
-  vi.useFakeTimers();
   vi.stubGlobal("PointerEvent", TestPointerEvent);
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
     x: 0,
@@ -79,7 +76,6 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
-  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 function setup() {
@@ -122,23 +118,17 @@ describe("preview navigation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Fit to canvas" }));
     expect(screen.getByLabelText("Zoom level").textContent).toBe("100%");
   });
-  it("does not pan during a short press or a movement before the hold completes", () => {
-    const { stage, layer } = setup(),
-      initial = layer();
-    fireEvent.pointerDown(stage, {
-      pointerId: 1,
-      clientX: 100,
-      clientY: 100,
-      button: 0,
-    });
-    act(() => vi.advanceTimersByTime(HOLD_TO_PAN_MS - 1));
-    fireEvent.pointerMove(stage, { pointerId: 1, clientX: 130, clientY: 130 });
-    act(() => vi.advanceTimersByTime(HOLD_TO_PAN_MS));
+  it("does not shift the diagram on a click without moving", () => {
+    const { stage, layer } = setup(), initial = layer();
+    fireEvent.pointerDown(stage, { pointerId: 1, clientX: 100, clientY: 100, button: 0 });
+    expect(stage.className).toContain("panning");
+    expect(layer()).toBe(initial);
+    fireEvent.pointerUp(stage, { pointerId: 1 });
     fireEvent.pointerMove(stage, { pointerId: 1, clientX: 170, clientY: 160 });
     expect(layer()).toBe(initial);
     expect(stage.className).not.toContain("panning");
   });
-  it("pans after holding, stops after release, and preserves SVG export markup", () => {
+  it("pans immediately, stops after release, and preserves SVG export markup", () => {
     const { stage, layer } = setup();
     const svg = stage.querySelector("svg")!.outerHTML;
     fireEvent.pointerDown(stage, {
@@ -147,7 +137,6 @@ describe("preview navigation", () => {
       clientY: 100,
       button: 0,
     });
-    act(() => vi.advanceTimersByTime(HOLD_TO_PAN_MS));
     expect(stage.className).toContain("panning");
     fireEvent.pointerMove(stage, { pointerId: 1, clientX: 180, clientY: 140 });
     expect(layer()).toBe("translate(80px, 40px) scale(1)");
@@ -159,7 +148,7 @@ describe("preview navigation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Fit to canvas" }));
     expect(layer()).toBe("translate(0px, 0px) scale(1)");
   });
-  it("cancels a pending hold when the pointer is cancelled", () => {
+  it("stops dragging when the pointer is cancelled", () => {
     const { stage, layer } = setup(),
       initial = layer();
     fireEvent.pointerDown(stage, {
@@ -169,7 +158,6 @@ describe("preview navigation", () => {
       button: 0,
     });
     fireEvent.pointerCancel(stage, { pointerId: 1 });
-    act(() => vi.advanceTimersByTime(HOLD_TO_PAN_MS));
     fireEvent.pointerMove(stage, { pointerId: 1, clientX: 180, clientY: 140 });
     expect(layer()).toBe(initial);
     expect(stage.className).not.toContain("panning");
@@ -195,17 +183,28 @@ describe("preview navigation", () => {
     );
     expect(screen.getByLabelText("Zoom level").textContent).toBe("100%");
   });
-  it("cleans up a pending hold on unmount", () => {
-    const { stage, unmount } = setup();
-    fireEvent.pointerDown(stage, {
-      pointerId: 1,
-      clientX: 100,
-      clientY: 100,
-      button: 0,
-    });
-    act(() => vi.advanceTimersByTime(HOLD_TO_PAN_MS - 1));
-    expect(stage.className).toContain("holding");
-    unmount();
-    expect(vi.getTimerCount()).toBe(0);
+  it("ignores right clicks and unrelated pointers during a drag", () => {
+    const { stage, layer } = setup(), initial = layer();
+    fireEvent.pointerDown(stage, { pointerId: 1, button: 2, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(stage, { pointerId: 1, clientX: 180, clientY: 140 });
+    expect(layer()).toBe(initial);
+    fireEvent.pointerDown(stage, { pointerId: 1, button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(stage, { pointerId: 2, clientX: 180, clientY: 140 });
+    fireEvent.pointerUp(stage, { pointerId: 2 });
+    expect(layer()).toBe(initial);
+    expect(stage.className).toContain("panning");
+    fireEvent.pointerMove(stage, { pointerId: 1, clientX: 180, clientY: 140 });
+    expect(layer()).toBe("translate(80px, 40px) scale(1)");
+  });
+  it.each(["window blur", "lost capture"])("stops dragging after %s", (reason) => {
+    const { stage, layer } = setup();
+    fireEvent.pointerDown(stage, { pointerId: 1, button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(stage, { pointerId: 1, clientX: 120, clientY: 120 });
+    const before = layer();
+    if (reason === "window blur") fireEvent.blur(window);
+    else fireEvent.lostPointerCapture(stage, { pointerId: 1 });
+    fireEvent.pointerMove(stage, { pointerId: 1, clientX: 180, clientY: 140 });
+    expect(layer()).toBe(before);
+    expect(stage.className).not.toContain("panning");
   });
 });

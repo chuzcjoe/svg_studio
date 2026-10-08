@@ -15,7 +15,6 @@ import {
   constrainView,
   fitScale,
   fitView,
-  HOLD_TO_PAN_MS,
   MAX_ZOOM,
   MIN_ZOOM,
   zoomView,
@@ -30,11 +29,8 @@ type Gesture = {
   pointerId: number;
   startX: number;
   startY: number;
-  lastX: number;
-  lastY: number;
   panX: number;
   panY: number;
-  armed: boolean;
 };
 export function DiagramViewport({
   config,
@@ -54,9 +50,8 @@ export function DiagramViewport({
   const layerRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState(fitView);
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
-  const [phase, setPhase] = useState<"idle" | "holding" | "panning">("idle");
+  const [phase, setPhase] = useState<"idle" | "panning">("idle");
   const gesture = useRef<Gesture | null>(null);
-  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const helpId = useId();
   const diagram = { width, height };
   const scale = fitScale(size, diagram) * view.zoom;
@@ -66,8 +61,6 @@ export function DiagramViewport({
   const cancelGesture = useCallback(() => {
     const current = gesture.current;
     gesture.current = null;
-    if (holdTimer.current) clearTimeout(holdTimer.current);
-    holdTimer.current = null;
     setPhase("idle");
     const node = viewportRef.current;
     if (current && node?.hasPointerCapture?.(current.pointerId))
@@ -110,13 +103,16 @@ export function DiagramViewport({
       ),
     );
   }, [size.width, size.height, width, height, cancelGesture]);
-  useEffect(
-    () => () => {
-      if (holdTimer.current) clearTimeout(holdTimer.current);
+  useEffect(() => {
+    window.addEventListener("blur", cancelGesture);
+    return () => {
+      window.removeEventListener("blur", cancelGesture);
+      const current = gesture.current;
       gesture.current = null;
-    },
-    [],
-  );
+      if (current && viewportRef.current?.hasPointerCapture?.(current.pointerId))
+        viewportRef.current.releasePointerCapture(current.pointerId);
+    };
+  }, [cancelGesture, viewportRef]);
 
   function zoomBy(delta: number) {
     cancelGesture();
@@ -128,7 +124,7 @@ export function DiagramViewport({
     cancelGesture();
     setView(fitView());
   }
-  function startHold(event: PointerEvent<HTMLDivElement>) {
+  function startPan(event: PointerEvent<HTMLDivElement>) {
     if (event.button !== 0 || event.isPrimary === false || gesture.current)
       return;
     event.currentTarget.focus({ preventScroll: true });
@@ -136,39 +132,16 @@ export function DiagramViewport({
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
-      lastX: event.clientX,
-      lastY: event.clientY,
       panX: view.x,
       panY: view.y,
-      armed: false,
     };
     gesture.current = current;
     event.currentTarget.setPointerCapture?.(event.pointerId);
-    setPhase("holding");
-    holdTimer.current = setTimeout(() => {
-      if (gesture.current !== current) return;
-      current.armed = true;
-      current.startX = current.lastX;
-      current.startY = current.lastY;
-      holdTimer.current = null;
-      setPhase("panning");
-    }, HOLD_TO_PAN_MS);
+    setPhase("panning");
   }
   function movePointer(event: PointerEvent<HTMLDivElement>) {
     const current = gesture.current;
     if (!current || current.pointerId !== event.pointerId) return;
-    current.lastX = event.clientX;
-    current.lastY = event.clientY;
-    if (!current.armed) {
-      if (
-        Math.hypot(
-          event.clientX - current.startX,
-          event.clientY - current.startY,
-        ) > 8
-      )
-        cancelGesture();
-      return;
-    }
     event.preventDefault();
     setView((old) =>
       constrainView(
@@ -218,7 +191,7 @@ export function DiagramViewport({
         aria-label="Interactive SVG preview"
         aria-describedby={helpId}
         tabIndex={0}
-        onPointerDown={startHold}
+        onPointerDown={startPan}
         onPointerMove={movePointer}
         onPointerUp={endPointer}
         onPointerCancel={endPointer}
@@ -264,7 +237,7 @@ export function DiagramViewport({
         <div className="pan-hint" id={helpId}>
           <Icon name="hand" size={15} />
           <span>
-            {phase === "panning" ? "Drag to pan" : "Hold, then drag to pan"}
+            Drag to pan
             <span className="visually-hidden">
               . When the preview is focused, use plus and minus to zoom, arrow
               keys to pan, and Home to fit.

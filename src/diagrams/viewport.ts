@@ -1,6 +1,5 @@
 export const MIN_ZOOM = 0.25;
 export const MAX_ZOOM = 4;
-export const HOLD_TO_PAN_MS = 300;
 export type Size = { width: number; height: number };
 export type ViewTransform = { zoom: number; x: number; y: number };
 export const fitView = (): ViewTransform => ({ zoom: 1, x: 0, y: 0 });
