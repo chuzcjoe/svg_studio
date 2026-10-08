@@ -5,11 +5,13 @@ import {
   fireEvent,
   waitFor,
   cleanup,
+  act,
 } from "@testing-library/react";
 import { Blob as NodeBlob } from "node:buffer";
 import App from "../App";
 import { loadPreset } from "../styles/presets";
 import { STORAGE_KEY } from "../hooks/useStyleConfig";
+import { THEME_STORAGE_KEY } from "../hooks/useTheme";
 import { generateMarkdown } from "../export/generateMarkdown";
 let blobs: NodeBlob[] = [];
 beforeEach(() => {
@@ -175,4 +177,45 @@ it("lets users clear and type a valid numeric value without losing edits", () =>
   expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).nodes.minWidth).toBe(
     160,
   );
+});
+
+it("persists the UI theme without changing the diagram configuration or export", async () => {
+  const first = render(<App />);
+  const config = localStorage.getItem(STORAGE_KEY);
+  fireEvent.click(screen.getByRole("button", { name: "Switch to dark mode" }));
+  expect(document.documentElement.dataset.theme).toBe("dark");
+  expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+  expect(localStorage.getItem(STORAGE_KEY)).toBe(config);
+  fireEvent.click(screen.getByRole("button", { name: "Export rules" }));
+  expect(await blobs[0].text()).toBe(generateMarkdown(JSON.parse(config!)));
+  first.unmount();
+  render(<App />);
+  expect(
+    screen.getByRole("button", { name: "Switch to light mode" }),
+  ).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Switch to light mode" }));
+  expect(document.documentElement.dataset.theme).toBe("light");
+  expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
+});
+
+it("follows the system theme until the user chooses a theme", () => {
+  let onChange: (event: { matches: boolean }) => void = () => {};
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn(() => ({
+      matches: true,
+      addEventListener: (_: string, listener: typeof onChange) => {
+        onChange = listener;
+      },
+      removeEventListener: vi.fn(),
+    })),
+  );
+  render(<App />);
+  expect(document.documentElement.dataset.theme).toBe("dark");
+  expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
+  act(() => onChange({ matches: false }));
+  expect(document.documentElement.dataset.theme).toBe("light");
+  fireEvent.click(screen.getByRole("button", { name: "Switch to dark mode" }));
+  act(() => onChange({ matches: false }));
+  expect(document.documentElement.dataset.theme).toBe("dark");
 });

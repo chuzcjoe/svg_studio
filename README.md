@@ -1,6 +1,6 @@
 # SVG Style Studio
 
-A browser-only design-system builder for consistent technical SVG diagrams. The application uses the selected **Precision Lab** interface: restrained blue, neutral controls, and a two-panel workspace focused on style editing and SVG previews. Diagram presets are independent of the application interface.
+A browser-only design-system builder for consistent technical SVG diagrams. The application uses the selected **Precision Lab** interface: restrained blue, neutral controls, and a two-panel workspace focused on style editing and SVG previews. Diagram presets are independent of the application interface. Use the moon/sun button in the header to switch between light and dark UI themes. The theme initially follows your system preference, remembers manual choices, and does not change diagram colors or exported rules.
 
 ## Run locally
 

@@ -9,6 +9,7 @@ import { loadPreset, isModified } from "./styles/presets";
 import { type ConfigGroup, parseConfigJSON } from "./styles/schema";
 import { contrastIssues } from "./styles/contrast";
 import { useStyleConfig } from "./hooks/useStyleConfig";
+import { useTheme } from "./hooks/useTheme";
 import { generateMarkdown } from "./export/generateMarkdown";
 export function downloadFile(content: string, name: string, type: string) {
   const url = URL.createObjectURL(new Blob([content], { type }));
@@ -55,6 +56,7 @@ const shortNames: Record<DiagramType, string> = {
   "Sequence Diagram": "Sequence",
 };
 export default function App() {
+  const { theme, toggleTheme } = useTheme();
   const { config, update, replace, undo, canUndo, storageWarning, restored } =
     useStyleConfig();
   const [group, setGroup] = useState<ConfigGroup>("colors"),
@@ -153,6 +155,24 @@ export default function App() {
                 : "Saved locally"}
           </div>
           <div className="header-actions">
+            <button
+              className="quiet theme-toggle"
+              onClick={toggleTheme}
+              aria-label={
+                theme === "dark"
+                  ? "Switch to light mode"
+                  : "Switch to dark mode"
+              }
+              aria-pressed={theme === "dark"}
+              title={
+                theme === "dark"
+                  ? "Switch to light mode"
+                  : "Switch to dark mode"
+              }
+            >
+              <Icon name={theme === "dark" ? "sun" : "moon"} size={18} />
+              <span>{theme === "dark" ? "Light" : "Dark"}</span>
+            </button>
             {canUndo && (
               <button
                 className="quiet"
