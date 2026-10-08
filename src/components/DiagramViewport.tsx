@@ -23,6 +23,8 @@ import {
 } from "../diagrams/viewport";
 import type { DiagramStyleConfig } from "../styles/schema";
 import { Icon } from "./Icon";
+import type { StyleImpact } from "../diagrams/styleImpact";
+import { StyleImpactOverlay } from "./StyleImpactOverlay";
 
 type Gesture = {
   pointerId: number;
@@ -40,13 +42,16 @@ export function DiagramViewport({
   width,
   height,
   viewportRef,
+  impact = null,
 }: {
   config: DiagramStyleConfig;
   type: DiagramType;
   width: number;
   height: number;
   viewportRef: RefObject<HTMLDivElement | null>;
+  impact?: StyleImpact | null;
 }) {
+  const layerRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState(fitView);
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
   const [phase, setPhase] = useState<"idle" | "holding" | "panning">("idle");
@@ -223,6 +228,7 @@ export function DiagramViewport({
         onKeyDown={keyboard}
       >
         <div
+          ref={layerRef}
           className="diagram-layer"
           style={{
             width,
@@ -231,7 +237,28 @@ export function DiagramViewport({
           }}
         >
           <Diagram config={config} type={type} />
+          {impact && impact.regions.length > 0 && (
+            <StyleImpactOverlay
+              impact={impact}
+              layerRef={layerRef}
+              width={width}
+              height={height}
+            />
+          )}
         </div>
+      </div>
+      <div
+        className={`impact-help ${impact ? "inspecting" : ""}`}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <Icon name="info" size={15} />
+        <span>
+          {impact ? (
+            <><strong>{impact.label}</strong> {impact.description}</>
+          ) : "Hover or focus a style setting to see what it changes."}
+        </span>
       </div>
       <div className="canvas-bottom">
         <div className="pan-hint" id={helpId}>

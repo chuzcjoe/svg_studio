@@ -25,7 +25,7 @@ npm run preview
 ## Workflow
 
 1. Start with Academic Minimal, Dark Engineering, Modern Soft, or Publication Monochrome. Preset cards show the same flowchart for comparison.
-2. Edit 39 validated tokens across Colors, Typography, Nodes, Connectors, Layout, and Effects.
+2. Edit 39 validated tokens across Colors, Typography, Nodes, Connectors, Layout, and Effects. Hover a setting or focus its input to highlight its affected nodes, text, connectors, arrowheads, or spacing in the live flowchart. A short description explains the effect. Unused tokens and disabled effects show an explanation instead of unrelated highlights. These inspection overlays follow zoom and pan and are excluded from downloaded SVGs.
 3. Inspect the live Flowchart preview. Use the − / + buttons to zoom from 25% to 400% relative to the fitted view. Hold the mouse or touch pointer, then drag to pan. Fit to canvas resets both zoom and pan. Keyboard users can focus the preview and use + / −, arrow keys, and Home. Zoom and pan only affect the on-screen view; downloaded SVG geometry stays unchanged. Other diagram types are currently outside the interface's scope.
 4. Click **Export rules** in the header to download `svg-style-rules.md` directly. Rules do not occupy a panel or require an intermediate dialog.
 5. Use **Save style JSON** at the bottom of the style editor to export `svg-style.json` and keep a complete versioned configuration. Import restores all tokens; invalid data is rejected without changing your current work.

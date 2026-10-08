@@ -11,6 +11,7 @@ import { contrastIssues } from "./styles/contrast";
 import { useStyleConfig } from "./hooks/useStyleConfig";
 import { useTheme } from "./hooks/useTheme";
 import { generateMarkdown } from "./export/generateMarkdown";
+import { getStyleImpact, type StyleTarget } from "./diagrams/styleImpact";
 export function downloadFile(content: string, name: string, type: string) {
   const url = URL.createObjectURL(new Blob([content], { type }));
   const a = document.createElement("a");
@@ -30,6 +31,11 @@ export default function App() {
     [mobileTab, setMobileTab] = useState("preview"),
     [toast, setToast] = useState(""),
     [importError, setImportError] = useState("");
+  const [inspected, setInspected] = useState<StyleTarget | null>(null);
+  const impact = useMemo(
+    () => getStyleImpact(config, inspected),
+    [config, inspected],
+  );
   const inputRef = useRef<HTMLInputElement>(null),
     canvasRef = useRef<HTMLDivElement>(null),
     toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -83,7 +89,7 @@ export default function App() {
     }
   }
   function saveSVG() {
-    const svg = canvasRef.current?.querySelector("svg");
+    const svg = canvasRef.current?.querySelector("svg.diagram");
     if (svg) {
       downloadFile(
         new XMLSerializer().serializeToString(svg),
@@ -245,6 +251,7 @@ export default function App() {
             group={group}
             setGroup={setGroup}
             modified={modified}
+            onInspect={setInspected}
             onPresets={() => setModal("presets")}
             onExportJSON={saveJSON}
             onUpdate={(g, k, v) => {
@@ -276,6 +283,7 @@ export default function App() {
                 width={scene.width}
                 height={scene.height}
                 viewportRef={canvasRef}
+                impact={impact}
               />
             </div>
             {issues.length > 0 && (

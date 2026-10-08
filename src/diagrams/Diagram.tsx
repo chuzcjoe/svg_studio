@@ -35,10 +35,11 @@ export function Diagram({
         fontSize={t.bodySize}
         fontWeight={t.boldWeight}
       >
-        <tspan x={n.x + n.w / 2}>{n.label}</tspan>
+        <tspan x={n.x + n.w / 2} data-preview-part={`${n.id}-label`}>{n.label}</tspan>
         {n.sub && (
           <tspan
             x={n.x + n.w / 2}
+            data-preview-part={`${n.id}-subtitle`}
             dy={subHeight}
             fill={c.colors.mutedText}
             fontSize={t.labelSize}
@@ -235,6 +236,7 @@ export function Diagram({
       {s.labels.map((l, i) => (
         <text
           key={`label-${i}`}
+          data-preview-part={l.title ? "title" : "caption"}
           x={l.x}
           y={l.y}
           textAnchor={l.anchor ?? "start"}

@@ -227,3 +227,71 @@ it("follows the system theme until the user chooses a theme", () => {
   act(() => onChange({ matches: false }));
   expect(document.documentElement.dataset.theme).toBe("dark");
 });
+
+describe("style inspection workflow", () => {
+  const row = (token: string) => document.querySelector<HTMLElement>(`[data-style-control="${token}"]`)!;
+  const regions = () => Array.from(document.querySelectorAll("[data-impact-region]")).map((el) => el.getAttribute("data-impact-region"));
+  it("highlights the hovered semantic node and clears on leaving without changing the style", () => {
+    render(<App />);
+    const before = localStorage.getItem(STORAGE_KEY);
+    fireEvent.mouseEnter(row("colors.input"));
+    expect(regions()).toEqual(["input"]);
+    expect(screen.getByText("The fill of the matching semantic node.")).toBeTruthy();
+    fireEvent.mouseLeave(row("colors.input"));
+    expect(document.querySelector("[data-impact-overlay]")).toBeNull();
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(before);
+  });
+  it("supports focus, lets hovering take priority, and restores the focused setting on leave", () => {
+    render(<App />);
+    const field = screen.getByLabelText("Primary hex");
+    fireEvent.focus(field);
+    expect(regions()).toEqual(["title", "process"]);
+    fireEvent.mouseEnter(row("colors.output"));
+    expect(regions()).toEqual(["output"]);
+    fireEvent.mouseLeave(row("colors.output"));
+    expect(regions()).toEqual(["title", "process"]);
+    fireEvent.blur(field);
+    expect(regions()).toEqual([]);
+  });
+  it("clears highlights when the browser loses focus", () => {
+    render(<App />);
+    fireEvent.mouseEnter(row("colors.input"));
+    fireEvent.blur(window);
+    expect(regions()).toEqual([]);
+  });
+  it("clears inspection when switching groups and distinguishes arrowheads from lines", () => {
+    render(<App />);
+    fireEvent.mouseEnter(row("colors.input"));
+    fireEvent.click(screen.getByRole("tab", { name: "Connectors" }));
+    expect(regions()).toEqual([]);
+    fireEvent.mouseEnter(row("connectors.arrowLength"));
+    expect(regions()).toEqual(["arrow-0", "arrow-1"]);
+    fireEvent.mouseLeave(row("connectors.arrowLength"));
+    fireEvent.mouseEnter(row("connectors.strokeWidth"));
+    expect(regions()).toEqual(["edge-0", "edge-1"]);
+  });
+  it("measures text bounds from the rendered SVG for typography highlights", () => {
+    render(<App />);
+    const title = document.querySelector('[data-preview-part="title"]')!;
+    Object.defineProperty(title, "getBBox", { value: () => ({ x: 32, y: 35, width: 97, height: 24 }) });
+    fireEvent.click(screen.getByRole("tab", { name: "Typography" }));
+    fireEvent.mouseEnter(row("typography.titleSize"));
+    const rect = document.querySelector('[data-impact-region="title"] rect')!;
+    expect(rect.getAttribute("x")).toBe("30");
+    expect(rect.getAttribute("width")).toBe("101");
+  });
+  it("keeps highlights out of SVG downloads and follows the zoom transform", async () => {
+    render(<App />);
+    const svg = document.querySelector(".diagram-stage svg.diagram")!;
+    const expected = new XMLSerializer().serializeToString(svg);
+    fireEvent.mouseEnter(row("colors.input"));
+    const overlay = document.querySelector("[data-impact-overlay]")!;
+    expect(overlay.parentElement).toBe(svg.parentElement);
+    fireEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+    expect(document.querySelector("[data-impact-region=input]")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "SVG" }));
+    const downloaded = await blobs[0].text();
+    expect(downloaded).toBe(expected);
+    expect(downloaded).not.toContain("data-impact");
+  });
+});

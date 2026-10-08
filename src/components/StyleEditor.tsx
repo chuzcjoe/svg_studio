@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { controls, groupLabels, colorLabels } from "../styles/controls";
 import type { DiagramStyleConfig, ConfigGroup } from "../styles/schema";
 import { Icon } from "./Icon";
+import type { StyleTarget } from "../diagrams/styleImpact";
 const fonts = [
   "Arial, Helvetica, sans-serif",
   "Inter, Arial, sans-serif",
@@ -16,6 +17,7 @@ export function StyleEditor({
   onPresets,
   onExportJSON,
   modified,
+  onInspect,
 }: {
   config: DiagramStyleConfig;
   group: ConfigGroup;
@@ -28,7 +30,47 @@ export function StyleEditor({
   onPresets: () => void;
   onExportJSON: () => void;
   modified: boolean;
+  onInspect: (target: StyleTarget | null) => void;
 }) {
+  const hovered = useRef<StyleTarget | null>(null);
+  const focused = useRef<StyleTarget | null>(null);
+  useEffect(() => {
+    const clear = () => {
+      hovered.current = null;
+      focused.current = null;
+      onInspect(null);
+    };
+    clear();
+    window.addEventListener("blur", clear);
+    return () => {
+      window.removeEventListener("blur", clear);
+      onInspect(null);
+    };
+  }, [group, onInspect]);
+  function inspectEvents(key: string) {
+    const target = { group, key };
+    return {
+      "data-style-control": `${group}.${key}`,
+      onMouseEnter: () => {
+        hovered.current = target;
+        onInspect(target);
+      },
+      onMouseLeave: () => {
+        hovered.current = null;
+        onInspect(focused.current);
+      },
+      onFocusCapture: () => {
+        focused.current = target;
+        onInspect(hovered.current ?? target);
+      },
+      onBlurCapture: (event: React.FocusEvent<HTMLDivElement>) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          focused.current = null;
+          onInspect(hovered.current);
+        }
+      },
+    };
+  }
   return (
     <aside className="panel style-panel" aria-label="Style editor">
       <div className="panel-title">
@@ -106,12 +148,13 @@ export function StyleEditor({
         </div>
         {group === "colors"
           ? Object.entries(c.colors).map(([key, value]) => (
-              <ColorControl
-                key={key}
-                label={colorLabels[key]}
-                value={value}
-                onChange={(v) => onUpdate("colors", key, v)}
-              />
+              <div className="inspect-control" key={key} {...inspectEvents(key)}>
+                <ColorControl
+                  label={colorLabels[key]}
+                  value={value}
+                  onChange={(v) => onUpdate("colors", key, v)}
+                />
+              </div>
             ))
           : controls[group].map((control) => {
               const value = (
@@ -122,7 +165,11 @@ export function StyleEditor({
                 )[control.key],
                 id = `control-${group}-${control.key}`;
               return (
-                <div className="control" key={control.key}>
+                <div
+                  className="control inspect-control"
+                  key={control.key}
+                  {...inspectEvents(control.key)}
+                >
                   {control.kind === "range" ? (
                     <>
                       <div className="range-label">
@@ -258,9 +305,9 @@ export function StyleEditor({
         <div className="tip">
           <Icon name="info" size={13} />
           <p>
-            One style. A clearer flow.
+            See what each setting changes.
             <span>
-              These tokens update your flowchart and exported rules.
+              Hover or focus a setting to highlight its area in the live preview.
             </span>
           </p>
         </div>
