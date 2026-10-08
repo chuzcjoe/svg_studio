@@ -294,7 +294,7 @@ describe("style inspection workflow", () => {
   it("keeps highlights out of SVG downloads and follows the zoom transform", async () => {
     render(<App />);
     const svg = document.querySelector(".diagram-stage svg.diagram")!;
-    const expected = new XMLSerializer().serializeToString(svg);
+    const expected = new DOMParser().parseFromString(svg.outerHTML, "image/svg+xml").documentElement;
     fireEvent.mouseEnter(row("colors.input"));
     const overlay = document.querySelector("[data-impact-overlay]")!;
     expect(overlay.parentElement).toBe(svg.parentElement);
@@ -302,7 +302,27 @@ describe("style inspection workflow", () => {
     expect(document.querySelector("[data-impact-region=input]")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "SVG" }));
     const downloaded = await blobs[0].text();
-    expect(downloaded).toBe(expected);
+    const exported = new DOMParser().parseFromString(downloaded, "image/svg+xml");
+    expect(exported.querySelector("parsererror")).toBeNull();
+    expect(exported.documentElement.isEqualNode(expected)).toBe(true);
     expect(downloaded).not.toContain("data-impact");
   });
+});
+
+it("applies a quoted font stack from the grouped menu and preserves it in exports", async () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole("tab", { name: "Typography" }));
+  const stack = '"Times New Roman", Times, serif';
+  const menu = screen.getByLabelText("Common font stacks");
+  fireEvent.change(menu, { target: { value: stack } });
+  expect(screen.getByRole("option", { name: "Times New Roman" }).getAttribute("value")).toBe(stack);
+  expect(screen.getByLabelText("Font stack").getAttribute("value")).toBe(stack);
+  expect(document.querySelector("svg.diagram")?.getAttribute("font-family")).toBe(stack);
+  expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).typography.fontFamily).toBe(stack);
+  fireEvent.click(screen.getByRole("button", { name: "Export rules" }));
+  expect(await blobs[0].text()).toContain(stack);
+  fireEvent.click(screen.getByRole("button", { name: "SVG" }));
+  const svg = new DOMParser().parseFromString(await blobs[1].text(), "image/svg+xml");
+  expect(svg.querySelector("parsererror")).toBeNull();
+  expect(svg.documentElement.getAttribute("font-family")).toBe(stack);
 });

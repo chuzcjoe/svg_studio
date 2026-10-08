@@ -91,8 +91,11 @@ export default function App() {
   function saveSVG() {
     const svg = canvasRef.current?.querySelector("svg.diagram");
     if (svg) {
+      const exported = svg.cloneNode(true) as SVGElement;
+      // XMLSerializer declares the SVG namespace from the node's namespaceURI.
+      exported.removeAttribute("xmlns");
       downloadFile(
-        new XMLSerializer().serializeToString(svg),
+        new XMLSerializer().serializeToString(exported),
         "flowchart.svg",
         "image/svg+xml;charset=utf-8",
       );

@@ -3,12 +3,7 @@ import { controls, groupLabels, colorLabels } from "../styles/controls";
 import type { DiagramStyleConfig, ConfigGroup } from "../styles/schema";
 import { Icon } from "./Icon";
 import type { StyleTarget } from "../diagrams/styleImpact";
-const fonts = [
-  "Arial, Helvetica, sans-serif",
-  "Inter, Arial, sans-serif",
-  "Georgia, Times New Roman, serif",
-  "Menlo, Consolas, monospace",
-];
+import { fontGroups, fontStacks } from "../styles/fonts";
 export function StyleEditor({
   config: c,
   group,
@@ -230,7 +225,7 @@ export function StyleEditor({
                         id={`${id}-preset`}
                         aria-label="Common font stacks"
                         value={
-                          fonts.includes(String(value))
+                          fontStacks.some((stack) => stack === String(value))
                             ? String(value)
                             : "custom"
                         }
@@ -239,10 +234,14 @@ export function StyleEditor({
                           onUpdate(group, control.key, e.target.value)
                         }
                       >
-                        {fonts.map((f) => (
-                          <option key={f} value={f}>
-                            {f.split(",")[0]}
-                          </option>
+                        {fontGroups.map((fontGroup) => (
+                          <optgroup key={fontGroup.label} label={fontGroup.label}>
+                            {fontGroup.fonts.map((font) => (
+                              <option key={font.value} value={font.value}>
+                                {font.label}
+                              </option>
+                            ))}
+                          </optgroup>
                         ))}
                         <option value="custom">Custom font stack</option>
                       </select>
@@ -253,8 +252,9 @@ export function StyleEditor({
                         id={id}
                       />
                       <p className="control-help">
-                        System fonts travel with exported SVGs. Fonts available
-                        on each device may differ.
+                        Uses fonts installed on your device; unavailable fonts
+                        use the fallback stack. The same stack is saved in SVG
+                        and rules exports.
                       </p>
                     </>
                   ) : (
